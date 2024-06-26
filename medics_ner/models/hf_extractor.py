@@ -2,12 +2,14 @@ from typing import Dict, Optional, Tuple
 
 from transformers import pipeline
 
-from .extractor_base import EncoderSpanExtractor, DecoderSpanExtractor
+from .extractor_base import DecoderSpanExtractor, EncoderSpanExtractor
 from .span_dataclasses import NERSpan, NERSpans
-from .utils import (get_all_matches, 
-                    merge_spans_with_same_labels, 
-                    parse_generated_list, 
-                    get_iob_stripped_entity_set)
+from .utils import (
+    get_all_matches,
+    get_iob_stripped_entity_set,
+    merge_spans_with_same_labels,
+    parse_generated_list,
+)
 
 
 class HFEncoderSpanExtractor(EncoderSpanExtractor):
@@ -22,7 +24,9 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
         )  # these are the relevant entities
 
         if label_normalization_map is None:
-            self.label_normalization_map = {ent:ent.lower() for ent in self.model_entities}
+            self.label_normalization_map = {
+                ent: ent.lower() for ent in self.model_entities
+            }
 
     def load_model(self, identifier=None):
         if identifier is None:
@@ -92,11 +96,12 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
 
 
 class HFDecoderSpanExtractor(DecoderSpanExtractor):
-    def __init__(self, 
-                 identifier: str, 
-                 prompt_file_path: str,
-                 label_normalization_map=None
-                 ):
+    def __init__(
+        self,
+        identifier: str,
+        prompt_file_path: str = None,
+        label_normalization_map=None,
+    ):
         super().__init__(identifier, label_normalization_map)
         self.prompt_file_path = prompt_file_path
         self.prompt_template = self.load_prompt(self.prompt_file_path)
@@ -178,7 +183,6 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
     def extract_spans_from_chunk(
         self, text: str, label_normalization_map=None
     ) -> NERSpans:
-        
         if label_normalization_map is None:
             label_normalization_map = self.label_normalization_map
 

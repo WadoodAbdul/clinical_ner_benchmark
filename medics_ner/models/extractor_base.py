@@ -30,9 +30,7 @@ class SpanExtractor(GenericSpanExtractor):
     """
 
     def __init__(
-        self, 
-        identifier: str, 
-        label_normalization_map: Optional[dict[str]] = None
+        self, identifier: str, label_normalization_map: Optional[dict[str]] = None
     ):
         super().__init__()
         self.identifier = identifier
@@ -41,6 +39,22 @@ class SpanExtractor(GenericSpanExtractor):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = self.load_model(identifier)
         self.model_max_length = self._get_model_max_length()
+
+    @classmethod
+    def from_predefined(cls, identifier, **kwargs):
+        from .model_loader import load_ner_processor
+
+        return load_ner_processor(identifier, **kwargs)
+
+    def set_attributes_for_dataset(self, **kwargs):
+        """
+        Sets the attributes that are required for inference, to align output with dataset requirements.
+        This is used for evaluation
+        """
+        for attribute, value in kwargs.items():
+            if not hasattr(self, attribute):
+                print(f"the {attribute=} does not exist in class and will not be reset")
+            setattr(self, attribute, value)
 
     @abstractmethod
     def load_model(self, model_name_or_path):
@@ -143,9 +157,7 @@ class SpanExtractor(GenericSpanExtractor):
 
 
 class EncoderSpanExtractor(SpanExtractor):
-    def __init__(
-        self, identifier: str, label_normalization_map: dict[str] = None
-    ):
+    def __init__(self, identifier: str, label_normalization_map: dict[str] = None):
         super().__init__(identifier, label_normalization_map)
 
 
@@ -153,17 +165,13 @@ class DecoderSpanExtractor(SpanExtractor):
     def __init__(self, identifier: str, label_normalization_map=None):
         super().__init__(identifier, label_normalization_map)
 
-    def load_prompt(
-        self, prompt_template_file_path: str
-    ) -> str:
+    def load_prompt(self, prompt_template_file_path: str) -> str:
         """Returns the prompt with kwargs substititued in the string"""
         template = read_template(prompt_template_file_path)
         jinja_env = jinja2.Environment()
         return jinja_env.from_string(template)
-    
-    def load_prompt_with_variables(
-        self, prompt_template, **kwargs
-    ) -> str:
+
+    def load_prompt_with_variables(self, prompt_template, **kwargs) -> str:
         return prompt_template.render(kwargs)
 
     @abstractmethod
