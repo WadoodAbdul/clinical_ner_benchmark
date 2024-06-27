@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from datasets import load_dataset
 
-from medics_ner.evaluation.metrics import NERPartialSpanMetric
+from clinical_ner.evaluation.metrics import NERPartialSpanMetric
 
 from ..base_tasks import Task, TaskDataset
 

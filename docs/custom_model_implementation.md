@@ -12,8 +12,8 @@ In case your model doesn't fit any of the model classes above, you can implement
 To implement a custom model, we have to ensure the CustomModel inherits from the `GenericSpanExtractor` or `SpanExtractor` abstract classes.
 
 ```python
-from medics_ner.models import GenericSpanExtractor
-from medics_ner.models.span_dataclasses import NERSpans
+from clinical_ner.models import GenericSpanExtractor
+from clinical_ner.models.span_dataclasses import NERSpans
 
 class MyCustomModel(GenericSpanExtractor):
     def extract_spans_from_chunk(text: str, **kwargs) -> NERSpans:

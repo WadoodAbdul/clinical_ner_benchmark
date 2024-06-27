@@ -1,4 +1,4 @@
-<h1 align="center">CLINICAL NER Benchmark</h1>
+<h1 align="center">Clinical NER Benchmark</h1>
 
 <!-- <p align="center">
     <a href="https://github.com/embeddings-benchmark/mteb/releases">
@@ -33,7 +33,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/WadoodAbdul/clinical_ner.git
+git clone https://github.com/WadoodAbdul/clinical_ner_benchmark.git
 cd medics_ner
 pip install -e .
 ```
@@ -126,7 +126,7 @@ More information on custom implementation can be found [here](docs/custom_model_
 [Datasets]: docs/datasets.md
 [Metrics]: docs/metrics.md
 [Submit to leaderboard]: docs/submit_to_leaderboard.md
-[Leaderboard]: https://huggingface.co/spaces/m42-health/medics_ner_leaderboard
+[Leaderboard]: https://huggingface.co/spaces/m42-health/clinical_ner_leaderboard
 [Reproducing results]: docs/reproducing_results.md
 [Custom model implementation]: docs/custom_model_implementation.md
 

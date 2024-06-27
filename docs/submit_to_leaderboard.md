@@ -9,9 +9,9 @@ To submit a model to the leaderboard:
 ### Getting the evaluation outputs
 
 ```python
-from medics.models import SpanExtractor
-from evaluation_pipeline.evaluator import Evaluator
-from medics.benchmarks import MEDICS_NER
+from clinical_ner.models import SpanExtractor
+from clinical_ner.evaluation_pipeline.evaluator import Evaluator
+from clinical_ner.benchmarks import MEDICS_NER
 
 model_name = "alvaroalon2/biobert_diseases_ner"
 

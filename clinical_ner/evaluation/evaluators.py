@@ -1,8 +1,8 @@
 import json
 import os
 
-import medics_ner.evaluation.ner_utils as ner_utils
-from medics_ner.tasks import Task
+import clinical_ner.evaluation.ner_utils as ner_utils
+from clinical_ner.tasks import Task
 
 
 def get_ground_truth_and_predictions(model, dataset, output_dir):

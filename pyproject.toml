@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "medics_ner"
+name = "clinical_ner"
 version = "0.0.1"
-description = "MEDICS benchmark for bio-medical NLP tasks"
+description = "Clinical benchmark for medical NER"
 readme = "README.md"
 authors = [
     { name = "MEDICS Contributors", email = "wadood3003@gmail.com" },
@@ -33,9 +33,9 @@ dependencies = [
 
 
 [project.urls]
-homepage = "https://github.com/WadoodAbdul/medics_ner"
-"Leaderboard" = "https://huggingface.co/spaces/m42-health/medics_ner_leaderboard"
-"Source Code" = "https://github.com/WadoodAbdul/medics_ner"
+homepage = "https://github.com/WadoodAbdul/clinical_ner_benchmark"
+"Leaderboard" = "https://huggingface.co/spaces/m42-health/clinical_ner_leaderboard"
+"Source Code" = "https://github.com/WadoodAbdul/clinical_ner_benchmark"
 
 [tool.setuptools.packages.find]
 exclude = ["data", "results"]
