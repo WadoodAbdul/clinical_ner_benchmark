@@ -34,7 +34,7 @@
 
 ```bash
 git clone https://github.com/WadoodAbdul/clinical_ner_benchmark.git
-cd medics_ner
+cd clinical_ner_benchmark
 pip install -e .
 ```
 
@@ -43,9 +43,9 @@ pip install -e .
 
 
 ```python
-from medics_ner.models import SpanExtractor
-from medics_ner.evaluation import Evaluator
-from medics_ner.benchmarks import MEDICS_NER
+from clinical_ner.models import SpanExtractor
+from clinical_ner.evaluation import Evaluator
+from clinical_ner.benchmarks import MEDICS_NER
 
 model_name = "alvaroalon2/biobert_diseases_ner"
 
@@ -77,8 +77,8 @@ evaluation.run()
 Models should be inherited from the `GenericSpanExtractor` or `SpanExtractor` abstract classes.
 
 ```python
-from medics_ner.models import GenericSpanExtractor
-from medics_ner.models.span_dataclasses import NERSpans
+from clinical_ner.models import GenericSpanExtractor
+from clinical_ner.models.span_dataclasses import NERSpans
 
 class MyCustomModel(GenericSpanExtractor):
     def extract_spans_from_chunk(text: str, **kwargs) -> NERSpans:
@@ -145,8 +145,3 @@ More information on custom implementation can be found [here](docs/custom_model_
 }
 ```
 
-## ToDo
-
-- [ ] add configs for evaluated models
-- [ ] rerun all models for sanity
-- 
