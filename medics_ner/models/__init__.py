@@ -1,1 +1,1 @@
-from .extractor_base import SpanExtractor
+from .extractor_base import SpanExtractor, GenericSpanExtractor

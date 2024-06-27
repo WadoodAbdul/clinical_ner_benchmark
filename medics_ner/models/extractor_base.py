@@ -19,9 +19,26 @@ class GenericSpanExtractor(ABC):
     Abstract base class for all classes that perform the function of getting ner spans from a piece of text
     """
 
+    def set_attributes_for_dataset(self, **kwargs):
+        """
+        Sets the attributes that are required for inference, to align output with dataset requirements.
+        This is used for evaluation
+        """
+        for attribute, value in kwargs.items():
+            if not hasattr(self, attribute):
+                print(f"the {attribute=} does not exist in class and will not be reset")
+            setattr(self, attribute, value)
+
     @abstractmethod
-    def extract_spans_from_chunk(text: str) -> NERSpans:
+    def extract_spans_from_chunk(text: str, **kwargs) -> NERSpans:
+        """
+        If you are inheriting from this class, this function should be implemented to handle span extraction from any sequence length
+        """
         pass
+
+    def __call__(self, text: str, **kwargs) -> NERSpans:
+        return self.extract_spans_from_chunk(text, **kwargs)
+
 
 
 class SpanExtractor(GenericSpanExtractor):
@@ -45,16 +62,6 @@ class SpanExtractor(GenericSpanExtractor):
         from .model_loader import load_ner_processor
 
         return load_ner_processor(identifier, **kwargs)
-
-    def set_attributes_for_dataset(self, **kwargs):
-        """
-        Sets the attributes that are required for inference, to align output with dataset requirements.
-        This is used for evaluation
-        """
-        for attribute, value in kwargs.items():
-            if not hasattr(self, attribute):
-                print(f"the {attribute=} does not exist in class and will not be reset")
-            setattr(self, attribute, value)
 
     @abstractmethod
     def load_model(self, model_name_or_path):
@@ -165,7 +172,8 @@ class DecoderSpanExtractor(SpanExtractor):
     def __init__(self, identifier: str, label_normalization_map=None):
         super().__init__(identifier, label_normalization_map)
 
-    def load_prompt(self, prompt_template_file_path: str) -> str:
+    @staticmethod
+    def load_prompt(prompt_template_file_path: str) -> str:
         """Returns the prompt with kwargs substititued in the string"""
         template = read_template(prompt_template_file_path)
         jinja_env = jinja2.Environment()

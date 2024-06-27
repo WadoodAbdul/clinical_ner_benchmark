@@ -6,7 +6,12 @@ from medics_ner.evaluation.metrics import NERPartialSpanMetric
 
 from ..base_tasks import Task, TaskDataset
 
-TASK_NAME_HF_LINK_MAP = {"NCBI": "m42-health/medics_ner"}
+TASK_NAME_HF_LINK_MAP = {
+    "NCBI": "m42-health/m2_ncbi",
+    "CHIA": "m42-health/m2_chia",
+    "BIORED": "m42-health/m2_biored",
+    "BC5CDR": "m42-health/m2_bc5cdr",
+    }
 
 
 class NERDataset(TaskDataset):
@@ -38,6 +43,31 @@ class CHIA(NERDataset):
     evaluation_split = "validation"
 
     def __init__(self, identifier="CHIA") -> None:
+        super().__init__(identifier)
+
+    def load_data(self):
+        return load_dataset(TASK_NAME_HF_LINK_MAP[self.identifier])
+
+    def get_evaluation_split(self):
+        return super().get_evaluation_split()
+
+class BIORED(NERDataset):
+    evaluation_split = "validation"
+
+    def __init__(self, identifier="BIORED") -> None:
+        super().__init__(identifier)
+
+    def load_data(self):
+        return load_dataset(TASK_NAME_HF_LINK_MAP[self.identifier])
+
+    def get_evaluation_split(self):
+        return super().get_evaluation_split()
+
+        
+class BC5CDR(NERDataset):
+    evaluation_split = "validation"
+
+    def __init__(self, identifier="BC5CDR") -> None:
         super().__init__(identifier)
 
     def load_data(self):

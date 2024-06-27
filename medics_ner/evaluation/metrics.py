@@ -1,6 +1,9 @@
+import os
 from abc import ABC, abstractmethod
 
 from nervaluate import Evaluator
+
+from .utils import save_dict_to_json, calculate_f1_score, explode_list
 
 
 class BaseMetric(ABC):
@@ -33,3 +36,22 @@ class NERPartialSpanMetric(BaseMetric):
             "results": results,
             "results_per_tag": results_per_tag,
         }
+    
+    @staticmethod
+    def save_metrics(span_metrics, model_dataset_folder_path):
+
+        # if (span_metrics := evaluation_metrics.get("span_metrics", None)) is not None:
+        save_path = os.path.join(model_dataset_folder_path, "partial_span_level_metrics/")
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        save_dict_to_json(
+            dict_variable=span_metrics["results"],
+            file_path=os.path.join(save_path, "results.json"),
+        )
+        save_dict_to_json(
+            dict_variable=span_metrics["results_per_tag"],
+            file_path=os.path.join(
+                save_path,
+                "results_per_tag.json",
+            ),
+        )

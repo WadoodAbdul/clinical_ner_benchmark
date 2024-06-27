@@ -1,7 +1,7 @@
 import json
 import os
 
-import medics_ner.evaluation.ner_evaluation_utils as ner_utils
+import medics_ner.evaluation.ner_utils as ner_utils
 from medics_ner.tasks import Task
 
 
@@ -19,25 +19,28 @@ class Evaluator:
         self.model = model
         self.benchmark = benchmark
         self.dataset_wise_config = dataset_wise_config
-        if output_dir is None:
-            self.output_dir = os.path.join("./outputs", model.identifier)
+        self.output_dir = "../data/outputs" if output_dir is None else output_dir            
+        self.output_dir = os.path.join(self.output_dir, model.identifier)
 
         assert set(benchmark.tasks) == set(dataset_wise_config.keys())
 
-    def evaluate_model_on_dataset(self, model, dataset, dataset_outputs_dir):
+    def evaluate_model_on_dataset(self, model, dataset, model_dataset_outputs_dir):
         """
         Returns the evaluation metric of a model on a dataset.
         Note: the model object is expected to be set for the dataset passed.
         """
 
         ground_truth, predictions, _, _ = get_ground_truth_and_predictions(
-            model, dataset, dataset_outputs_dir
+            model, dataset, model_dataset_outputs_dir
         )
         evaluation_metrics = dataset.metric.compute_metrics(
             ground_truth,
             predictions,
             labels=list(set(self.model.label_normalization_map.values())),
         )
+
+        dataset.metric.save_metrics(evaluation_metrics, model_dataset_outputs_dir)
+
         return evaluation_metrics
 
     def format_and_consolidate_metrics():
@@ -88,3 +91,5 @@ class Evaluator:
             ner_utils.save_metrics(evaluation_metrics, dataset_outputs_dir)
 
         self.save_benchmark_metrics(dataset_wise_metrics)
+
+        return dataset_wise_metrics

@@ -1,4 +1,4 @@
-from tasks import TaskDataset
+from .tasks import TaskDataset
 
 
 class Benchmark:

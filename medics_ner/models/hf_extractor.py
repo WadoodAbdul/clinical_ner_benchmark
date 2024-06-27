@@ -104,7 +104,7 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
     ):
         super().__init__(identifier, label_normalization_map)
         self.prompt_file_path = prompt_file_path
-        self.prompt_template = self.load_prompt(self.prompt_file_path)
+        self.prompt_template = self.load_prompt(self.prompt_file_path) if self.prompt_file_path is not None else None
 
     def load_model(self, identifier=None):
         if identifier is None:

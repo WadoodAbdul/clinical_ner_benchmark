@@ -10,7 +10,7 @@ IDENTIFIER_TO_SPAN_EXTRACTOR_MAP = {
     "alvaroalon2/biobert_diseases_ner": "hf_encoder_based",
     "bioformers/bioformer-8L-ncbi-disease": "hf_encoder_based",
     "numind/NuNER_Zero": "gliner_based",
-    "/nfs/projects/healthcare/USERS/wadood/AMC/medical_coding/models/Universal-NER/UniNER-7B-type": "hf_decoder_based",
+    "Universal-NER/UniNER-7B-type": "hf_decoder_based",
     "Meta-Llama-3-70b-Instruct": "m2_decoder_based",
     "Mixtral-8x7B-Instruct-v0.1": "m2_decoder_based",
     "numind/NuNER_Zero-span": "gliner_based",
@@ -35,12 +35,10 @@ def load_ner_processor(identifier, **model_kwargs):
         #     print(f"Loaded GLiNER Token model {model_config['identifier']}")
         case "hf_encoder_based":
             ner_processor = HFEncoderSpanExtractor(identifier, **model_kwargs)
-            print(f"Loaded HF NER model {identifier=} with {model_kwargs=}")
-        # case "hf_decoder_based":
-        #     ner_processor = HFDecoderSpanExtractor(
-        #         model_config["identifier"], **model_config["model_args"]
-        #     )
-        #     print(f"Loaded Decoder model {model_config['identifier']}")
+            print(f"Loaded HF Encoder NER model {identifier=} with {model_kwargs=}")
+        case "hf_decoder_based":
+            ner_processor = HFDecoderSpanExtractor(identifier, **model_kwargs)
+            print(f"Loaded HF Decoder NER model {identifier=} with {model_kwargs=}")
         # case "m2_decoder_based":
         #     ner_processor = M2SpanExtractor(
         #         model_config["identifier"], **model_config["model_args"]

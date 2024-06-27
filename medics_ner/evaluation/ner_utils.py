@@ -13,16 +13,10 @@ from sklearn.metrics import (
 )
 from tqdm import tqdm
 
+
+from .utils import save_dict_to_json, calculate_f1_score, explode_list
+
 EVALUATION_RESULTS_FOLDER_PATH = "../data/evaluation_results/"
-
-
-def save_dict_to_json(dict_variable, file_path):
-    with open(file_path, "w") as fp:
-        json.dump(dict_variable, fp)
-
-
-def calculate_f1_score(p, r):
-    return (2 * p * r) / (p + r)
 
 
 def get_span_ground_truth_and_predictions(
@@ -127,9 +121,6 @@ def get_ground_truth_and_predictions(
 
     return span_ground_truths, span_predictions, token_ground_truths, token_predictions
 
-
-def explode_list(nested_list):
-    return [item for sublist in nested_list for item in sublist]
 
 
 def get_span_level_metrics(span_ground_truths, span_predictions, labels):
