@@ -24,7 +24,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "transformers==4.40.1",
-    "gliner==0.2.2",
+    "gliner==0.2.4",
     "datasets==2.19.0",
     "pandas==2.1.4",
     "nervaluate==0.1.8",
