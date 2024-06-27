@@ -1,4 +1,4 @@
-<h1 align="center">MEDICS NER Benchmark</h1>
+<h1 align="center">CLINICAL NER Benchmark</h1>
 
 <!-- <p align="center">
     <a href="https://github.com/embeddings-benchmark/mteb/releases">
@@ -19,21 +19,21 @@
     <p>
         <a href="#installation">Installation</a> |
         <a href="#usage">Usage</a> |
-        <a href="https://huggingface.co/spaces/m42-health/medics_ner_leaderboard">Leaderboard</a> |
+        <a href="https://huggingface.co/spaces/m42-health/clinical_ner_leaderboard">Leaderboard</a> |
         <a href="#documentation">Documentation</a> |
         <a href="#citing">Citing</a>
     <p>
 </h4>
 
 <h3 align="center">
-    <a href="https://huggingface.co/spaces/m42-health/medics_ner_leaderboard"><img style="float: middle; padding: 10px 10px 10px 10px;" width="400"src="./docs/assets/logo.png" /></a>
+    <a href="https://huggingface.co/spaces/m42-health/clinical_ner_leaderboard"><img style="float: middle; padding: 10px 10px 10px 10px;" width="400"src="./docs/assets/logo.png" /></a>
 </h3>
 
 
 ## Installation
 
 ```bash
-git clone https://github.com/WadoodAbdul/medics_ner.git
+git clone https://github.com/WadoodAbdul/clinical_ner.git
 cd medics_ner
 pip install -e .
 ```
@@ -144,3 +144,9 @@ More information on custom implementation can be found [here](docs/custom_model_
   year = {}
 }
 ```
+
+## ToDo
+
+- [ ] add configs for evaluated models
+- [ ] rerun all models for sanity
+- 
