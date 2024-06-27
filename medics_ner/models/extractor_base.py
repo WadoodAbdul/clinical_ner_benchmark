@@ -43,7 +43,10 @@ class GenericSpanExtractor(ABC):
 
 class SpanExtractor(GenericSpanExtractor):
     """
-    Abstract base class for all classes that perform the function of getting ner spans from a piece of text
+    Abstract base class for all classes that perform the function of getting ner spans from a piece of text.
+    This has the added functionality 
+    - to accomodate models with a limited context length.
+    - return token level output
     """
 
     def __init__(
