@@ -4,7 +4,7 @@
             "disease": "condition",
             "medical condition": "condition"
         },
-        "prompt_file_path" : "llama_70B_ner_v0.1.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/llama_70B_ner_v0.1.jinja"
     },
     "chia": {
         "label_normalization_map": {
@@ -15,7 +15,7 @@
             "procedure": "procedure",
             "measurement": "measurement"
         },
-        "prompt_file_path" : "llama_70B_ner_v0.1.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/llama_70B_ner_v0.1.jinja"
     },
     "biored": {
         "label_normalization_map": {
@@ -26,7 +26,7 @@
             "gene": "gene",
             "gene variant": "gene variant"
         },
-        "prompt_file_path" : "llama_70B_ner_v0.1.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/llama_70B_ner_v0.1.jinja"
     },
     "bc5cdr": {
         "label_normalization_map": {
@@ -35,6 +35,6 @@
             "medical condition": "condition",
             "disease": "condition"
         },
-        "prompt_file_path" : "llama_70B_ner_v0.1.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/llama_70B_ner_v0.1.jinja"
     }
 }
