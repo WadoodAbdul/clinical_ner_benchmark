@@ -38,4 +38,4 @@ reproduce_leaderboard_results(models=leaderboard_models,
 
 ```
 
-the snippet above saves the result in the `reproduces_results` folder.
+the snippet above saves the result in the `reproduced_results` folder.
