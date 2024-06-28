@@ -6,6 +6,7 @@ class Benchmark:
         self,
         name: str,
         tasks: list[str],
+        clinical_types: list[str],
         description: str | None = None,
         reference: str | None = None,
         citation: str | None = None,
@@ -15,6 +16,7 @@ class Benchmark:
         self.reference = reference
         self.citation = citation
         self.tasks = tasks  # of TaskDatasets
+        self.clinical_types = clinical_types
 
     def __iter__(self):
         return iter(self.tasks)
@@ -40,6 +42,7 @@ MEDICS_NER = Benchmark(
         # "BC2GM",
         # "JNLPBA",
     ],
+    clinical_types = ['condition', 'drug', 'procedure', 'measurement', 'gene', 'gene variant'],
     description="",
     reference="",
     citation="""""",

@@ -1,5 +1,7 @@
 import json
 import os
+from collections import defaultdict
+
 
 import clinical_ner.evaluation.ner_utils as ner_utils
 from clinical_ner.tasks import Task
@@ -50,15 +52,39 @@ class Evaluator:
         pass
 
     def save_benchmark_metrics(self, dataset_wise_metrics):
-        """ """
+        """ 
+        Saves the results json file that will be used by the leaderboard.
+        The dataset and clinical entity are both macro averages
+        """
         benchmark_output_dir = os.path.join(self.output_dir, self.benchmark.name)
         if not os.path.exists(benchmark_output_dir):
             os.makedirs(benchmark_output_dir)
-        benchmark_metrics = {}
+
+        span_evaluation_criteria = "ent_type"
+
+        clinical_type_results = defaultdict(list)
+        dataset_wise_results = defaultdict(list)
+
         for task in self.benchmark.tasks:
-            benchmark_metrics[task] = round(
-                (dataset_wise_metrics[task]["results"]["partial"]["f1"] * 100), 1
-            )
+            type_wise_results = dataset_wise_metrics[task]['results_per_tag']
+            for entity in self.benchmark.clinical_types:
+                entity_result = type_wise_results.get(entity, None)
+                if entity_result is None:
+                    # model doesn't support that entity
+                    entity_f1 = 0
+                else:
+                    entity_f1 = entity_result[span_evaluation_criteria]["f1"]
+                    dataset_wise_results[task].append(entity_f1)
+                # model_results.append(entity_f1)
+                clinical_type_results[entity].append(entity_f1)
+        
+        mean = lambda score_list : sum(score_list) / len(score_list)
+
+        benchmark_metrics = {
+            "dataset_results" : {k.lower():{'f1':round((mean(v)*100),1)} for k,v in dataset_wise_results.items()},
+            "clinical_type_results":{k:{'f1':round((mean(v)*100),1)} for k,v in clinical_type_results.items()},
+                             }
+
 
         with open(os.path.join(benchmark_output_dir, "results.json"), "w") as f:
             json.dump(benchmark_metrics, f)
