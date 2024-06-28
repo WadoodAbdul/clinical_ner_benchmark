@@ -1,0 +1,1 @@
+{"ncbi": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "chia": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "biored": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "bc5cdr": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}}
