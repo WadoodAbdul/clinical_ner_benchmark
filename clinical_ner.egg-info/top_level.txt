@@ -1,3 +1,0 @@
-clinical_ner
-data
-docs
