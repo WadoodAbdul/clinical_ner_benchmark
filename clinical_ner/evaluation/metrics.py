@@ -20,6 +20,7 @@ class BaseMetric(ABC):
 
 class NERPartialSpanMetric(BaseMetric):
     INFO = ""
+    SPAN_METRIC_TYPE = "ent_type"
 
     def __init__(self) -> None:
         super().__init__()
@@ -30,7 +31,7 @@ class NERPartialSpanMetric(BaseMetric):
         results, results_per_tag = evaluator.evaluate()
         print(results)
         print(results_per_tag)
-        print(f'f1-score: {results["ent_type"]["f1"]}')
+        print(f'f1-score: {results[NERPartialSpanMetric.SPAN_METRIC_TYPE]["f1"]}')
 
         return {
             "results": results,
