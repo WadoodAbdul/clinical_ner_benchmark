@@ -17,7 +17,10 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
         self,
         identifier: str,
         label_normalization_map: Optional[Dict] = None,
+        aggregation_strategy:str = "max"
     ):
+        self.aggregation_strategy = aggregation_strategy
+        
         super().__init__(identifier, label_normalization_map)
         self.model_entities = get_iob_stripped_entity_set(
             list(self.model.model.config.label2id.keys())
@@ -27,6 +30,8 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
             self.label_normalization_map = {
                 ent: ent.lower() for ent in self.model_entities
             }
+        
+        
 
     def load_model(self, identifier=None):
         if identifier is None:
@@ -35,7 +40,7 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
         hf_pipeline = pipeline(
             model=identifier,
             task="ner",
-            aggregation_strategy="max",
+            aggregation_strategy=self.aggregation_strategy,
             device=self.device,
         )
         hf_pipeline.model.eval()
@@ -54,6 +59,15 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
 
     def _get_expected_sequence_length(self, text) -> int:
         return len(self.get_tokens(text)) + 2
+    
+    def get_inference_config(self) -> Dict:
+        import transformers
+        
+        return {
+            "label_normalization_map" : self.label_normalization_map,
+            "aggregation_strategy": self.aggregation_strategy,
+            "library_version" : transformers.__version__
+        }
 
     def extract_spans_from_chunk(
         self,
@@ -99,12 +113,22 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
     def __init__(
         self,
         identifier: str,
-        prompt_file_path: str = None,
         label_normalization_map=None,
+        prompt_file_path: str = None,
+        output_parsing_function_identifier: str = None,
+        generation_parameters:dict = {}
     ):
-        super().__init__(identifier, label_normalization_map)
-        self.prompt_file_path = prompt_file_path
-        self.prompt_template = self.load_prompt(self.prompt_file_path) if self.prompt_file_path is not None else None
+        super().__init__(identifier, 
+                         label_normalization_map=label_normalization_map,
+                         prompt_file_path=prompt_file_path,
+                         output_parsing_function_identifier=output_parsing_function_identifier,
+                         generation_parameters=generation_parameters
+                         )
+        default_generation_params = {"do_sample":False, 
+                                     "max_new_tokens":200,
+                                     "return_full_text":False}
+        self.generation_parameters = default_generation_params | generation_parameters
+
 
     def load_model(self, identifier=None):
         if identifier is None:
@@ -130,6 +154,16 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
         return (
             len(self.get_tokens(self.create_model_input(text, "disease"))) + 300
         )  # expected generation tokens
+    
+    def get_inference_config(self) -> Dict:
+        import transformers
+        return {
+            "label_normalization_map" : self.label_normalization_map,
+            "generation_parameters" : self.generation_parameters,
+            "prompt_file_path" : self.prompt_file_path,
+            "output_parsing_function_identifier" : self.output_parsing_function_identifier,
+            "library_version" : transformers.__version__
+        }
 
     def create_model_input(self, text: str, entity: str) -> str:
         if self.prompt_template is None:
@@ -141,9 +175,9 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
 
     def get_text_completion(self, text: str, entity: str):
         input_prompt = self.create_model_input(text, entity)
-        max_length = len(self.get_tokens(input_prompt)) + 200  # for generatation tokens
+        # max_length = len(self.get_tokens(input_prompt)) + 200  # for generatation tokens
         chat_completion = self.model(
-            input_prompt, do_sample=False, max_length=max_length, return_full_text=False
+            input_prompt, **self.generation_parameters
         )
         return chat_completion
 

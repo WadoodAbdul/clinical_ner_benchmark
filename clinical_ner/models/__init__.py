@@ -1,1 +1,2 @@
 from .extractor_base import SpanExtractor, GenericSpanExtractor
+from .model_loader import IDENTIFIER_TO_SPAN_EXTRACTOR_MAP

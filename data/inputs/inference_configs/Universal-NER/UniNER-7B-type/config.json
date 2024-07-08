@@ -1,12 +1,13 @@
 {
-    "ncbi": {
+    "NCBI": {
         "label_normalization_map": {
             "disease": "condition",
             "medical condition": "condition"
         },
-        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja",
+        "output_parsing_function_identifier" : "python_list_parser"
     },
-    "chia": {
+    "CHIA": {
         "label_normalization_map": {
             "drug": "drug",
             "chemical": "drug",
@@ -15,9 +16,10 @@
             "procedure": "procedure",
             "measurement": "measurement"
         },
-        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja",
+        "output_parsing_function_identifier" : "python_list_parser"
     },
-    "biored": {
+    "BIORED": {
         "label_normalization_map": {
             "drug": "drug",
             "chemical": "drug",
@@ -26,15 +28,17 @@
             "gene": "gene",
             "gene variant": "gene variant"
         },
-        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja",
+        "output_parsing_function_identifier" : "python_list_parser"
     },
-    "bc5cdr": {
+    "BC5CDR": {
         "label_normalization_map": {
             "drug": "drug",
             "chemical": "drug",
             "medical condition": "condition",
             "disease": "condition"
         },
-        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja"
+        "prompt_file_path" : "../data/inputs/prompt_templates/universal_ner.jinja",
+        "output_parsing_function_identifier" : "python_list_parser"
     }
 }

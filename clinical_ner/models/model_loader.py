@@ -1,6 +1,6 @@
 from .hf_extractor import HFDecoderSpanExtractor, HFEncoderSpanExtractor
-
-# from gliner_extractor_extractor import GLIEncoderSpanExtractor, GLITokenEncoderSpanExtractor
+from .m2_extractor import M2SpanExtractor
+from .gliner_extractor import GLIEncoderSpanExtractor
 
 # current options are gliner_based, hf_encoder_based, hf_decoder_based, gliner_token_based
 IDENTIFIER_TO_SPAN_EXTRACTOR_MAP = {
@@ -23,27 +23,21 @@ IDENTIFIER_TO_SPAN_EXTRACTOR_MAP = {
 
 def load_ner_processor(identifier, **model_kwargs):
     match IDENTIFIER_TO_SPAN_EXTRACTOR_MAP[identifier]:
-        # case "gliner_based":
-        #     ner_processor = GLIEncoderSpanExtractor(
-        #         model_config["identifier"], **model_config["model_args"]
-        #     )
-        #     print(f"Loaded GLiNER model {model_config['identifier']}")
-        # case "gli_ner_token_based":
-        #     ner_processor = GLITokenEncoderSpanExtractor(
-        #         model_config["identifier"], **model_config["model_args"]
-        #     )
-        #     print(f"Loaded GLiNER Token model {model_config['identifier']}")
+        case "gliner_based":
+            ner_processor = GLIEncoderSpanExtractor(identifier, **model_kwargs)
+            print(f"Loaded GLiNER model {identifier}")
+        case "gliner_token_based":
+            ner_processor = GLIEncoderSpanExtractor(identifier, is_token_based=True, **model_kwargs)
+            print(f"Loaded GLiNER model {identifier}")
         case "hf_encoder_based":
             ner_processor = HFEncoderSpanExtractor(identifier, **model_kwargs)
             print(f"Loaded HF Encoder NER model {identifier=} with {model_kwargs=}")
         case "hf_decoder_based":
             ner_processor = HFDecoderSpanExtractor(identifier, **model_kwargs)
             print(f"Loaded HF Decoder NER model {identifier=} with {model_kwargs=}")
-        # case "m2_decoder_based":
-        #     ner_processor = M2SpanExtractor(
-        #         model_config["identifier"], **model_config["model_args"]
-        #     )
-        #     print(f"Loaded M2 Decoder model {model_config['identifier']}")
+        case "m2_decoder_based":
+            ner_processor = M2SpanExtractor(identifier, **model_kwargs)
+            print(f"Loaded M2 Decoder model {identifier}")
         case _:
             print(f"No model {identifier=} in map")
     return ner_processor

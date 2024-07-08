@@ -30,7 +30,7 @@ class NERPartialSpanMetric(BaseMetric):
         results, results_per_tag = evaluator.evaluate()
         print(results)
         print(results_per_tag)
-        print(f'f1-score: {results["partial"]["f1"]}')
+        print(f'f1-score: {results["ent_type"]["f1"]}')
 
         return {
             "results": results,

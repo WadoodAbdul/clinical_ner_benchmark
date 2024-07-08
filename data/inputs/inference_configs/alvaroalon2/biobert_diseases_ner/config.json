@@ -1,1 +1,26 @@
-{"ncbi": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "chia": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "biored": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}, "bc5cdr": {"label_normalization_map": {"disease": "condition", "DISEASE": "condition"}}}
+{
+    "NCBI": {
+        "label_normalization_map": {
+            "disease": "condition",
+            "DISEASE": "condition"
+        }
+    },
+    "CHIA": {
+        "label_normalization_map": {
+            "disease": "condition",
+            "DISEASE": "condition"
+        }
+    },
+    "BIORED": {
+        "label_normalization_map": {
+            "disease": "condition",
+            "DISEASE": "condition"
+        }
+    },
+    "BC5CDR": {
+        "label_normalization_map": {
+            "disease": "condition",
+            "DISEASE": "condition"
+        }
+    }
+}

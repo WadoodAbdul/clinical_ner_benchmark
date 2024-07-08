@@ -51,6 +51,17 @@ class Evaluator:
         """
         pass
 
+    def save_model_inference_config(self, inference_config):
+        """
+        Saves the config used to run inference. This can be used to reproduce the result.
+        """
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        with open(os.path.join(self.output_dir, "inference_config.json"), "w") as f:
+            json.dump(inference_config, f)
+        
+
     def save_benchmark_metrics(self, dataset_wise_metrics):
         """ 
         Saves the results json file that will be used by the leaderboard.
@@ -67,14 +78,15 @@ class Evaluator:
 
         for task in self.benchmark.tasks:
             type_wise_results = dataset_wise_metrics[task]['results_per_tag']
-            for entity in self.benchmark.clinical_types:
+            for entity in self.benchmark[task].clinical_types:
                 entity_result = type_wise_results.get(entity, None)
                 if entity_result is None:
-                    # model doesn't support that entity
+                    # model doesn't support that entity or entity does not exist in dataset
                     entity_f1 = 0
                 else:
                     entity_f1 = entity_result[span_evaluation_criteria]["f1"]
-                    dataset_wise_results[task].append(entity_f1)
+
+                dataset_wise_results[task].append(entity_f1)
                 # model_results.append(entity_f1)
                 clinical_type_results[entity].append(entity_f1)
         
@@ -95,6 +107,7 @@ class Evaluator:
         """
 
         dataset_wise_metrics = {}
+        dataset_wise_configs = {}
 
         for dataset_name, dataset_config in self.dataset_wise_config.items():
             # sets the attributes of the model object to get outputs aligned to the datasets.
@@ -114,8 +127,12 @@ class Evaluator:
             )
 
             dataset_wise_metrics[dataset_name] = evaluation_metrics
+            dataset_wise_configs[dataset_name] = self.model.get_inference_config()
             ner_utils.save_metrics(evaluation_metrics, dataset_outputs_dir)
 
+
+        self.save_model_inference_config(dataset_wise_configs)
         self.save_benchmark_metrics(dataset_wise_metrics)
+
 
         return dataset_wise_metrics

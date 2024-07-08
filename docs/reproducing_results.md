@@ -20,7 +20,7 @@ dataset_wise_config = # load config
 model = SpanExtractor.from_predefined(model_name)
 
 evaluator = Evaluator(model, benchmark=benchmark, dataset_wise_config=dataset_wise_config)
-evaluation.run()
+evaluator.run()
 ```
 
 ## Complete leaderboard

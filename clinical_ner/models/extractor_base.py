@@ -5,6 +5,7 @@ import jinja2
 import torch
 
 from .span_dataclasses import NERSpans
+from .output_parsers import output_parser_loader
 from .utils import (
     ceiling_division,
     get_char_label_map,
@@ -100,6 +101,10 @@ class SpanExtractor(GenericSpanExtractor):
         pass
 
     @abstractmethod
+    def get_inference_config(self) -> dict:
+        """returns the parameters used for inference"""
+
+    @abstractmethod
     def extract_spans_from_chunk(self, text: str) -> NERSpans:
         """returns a ner spans in from a piece of text without worrying about seq len
         This is the model specific implementation of inference"""
@@ -172,8 +177,20 @@ class EncoderSpanExtractor(SpanExtractor):
 
 
 class DecoderSpanExtractor(SpanExtractor):
-    def __init__(self, identifier: str, label_normalization_map=None):
+    def __init__(
+            self, 
+            identifier: str, 
+            label_normalization_map=None,
+            prompt_file_path=None,
+            output_parsing_function_identifier: str = None,
+            generation_parameters:dict=None,
+            ):
         super().__init__(identifier, label_normalization_map)
+        self.prompt_file_path = prompt_file_path
+        self.prompt_template = self.load_prompt(self.prompt_file_path) if self.prompt_file_path is not None else None
+        self.output_parsing_function_identifier = output_parsing_function_identifier
+        self.output_parsing_function = output_parser_loader(output_parsing_function_identifier) if output_parsing_function_identifier is not None else None
+        self.generation_parameters = generation_parameters
 
     @staticmethod
     def load_prompt(prompt_template_file_path: str) -> str:
@@ -184,6 +201,15 @@ class DecoderSpanExtractor(SpanExtractor):
 
     def load_prompt_with_variables(self, prompt_template, **kwargs) -> str:
         return prompt_template.render(kwargs)
+    
+    def set_attributes_for_dataset(self, **kwargs):
+        super().set_attributes_for_dataset(**kwargs)
+
+        assert self.prompt_file_path is not None, "Can't perform inference without a prompt template"
+        self.prompt_template = self.load_prompt(self.prompt_file_path)
+
+        assert self.output_parsing_function_identifier is not None, "Can't parse output without a parsing function"
+        self.output_parsing_function = output_parser_loader(self.output_parsing_function_identifier)
 
     @abstractmethod
     def create_model_input(self, text: str, entity: str):
