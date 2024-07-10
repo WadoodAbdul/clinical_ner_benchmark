@@ -220,7 +220,7 @@ def extract_html_spans(input_text:str) -> list[dict]:
             'text': span_text,
             'start': start_index,
             'stop': start_index+len(span_text),
-            'class': span_class
+            'label': span_class
         })
 
     # Append any remaining text after the last match
