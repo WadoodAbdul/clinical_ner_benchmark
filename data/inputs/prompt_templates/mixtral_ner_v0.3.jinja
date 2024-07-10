@@ -1,0 +1,26 @@
+You are an expert in Natural Language Processing that helps to identify clinical Named Entities (NER) in a given text.
+
+## Instruction
+Your task is to generate an HTML version of an input text, marking up specific entities related to healthcare. The entities to be identified are: {{ ", ".join(labels) }}. Use HTML <span > tags to highlight these entities. Each <span > should have a class attribute indicating the type of the entity.
+
+## Entity markup guide
+{% for l in labels -%}
+{{ "Use <span class='{0}' > to denote a {0}.".format(l.split(' ')[0]) }}
+{% endfor %}
+Leave the text as it is if no such entities are found.
+
+## Entity definitions
+{% for d in descriptions -%}
+{{ "A {0} can be defined as {1}".format(d['name'], d['description'].lower()) }}
+{% endfor %}
+
+## Example
+Example Input: 
+He had been diagnosed with osteoarthritis of the knees and had undergone arthroscopy years prior to admission .
+Example Output: 
+He had been diagnosed with <span class="disease" >osteoarthritis of the knees</span >and had undergone <span class="procedure" >arthroscopy</span >years prior to admission .
+
+## Input: 
+{{ input }}
+
+## Output:
