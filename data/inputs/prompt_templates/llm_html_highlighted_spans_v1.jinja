@@ -1,0 +1,42 @@
+{%- if is_system_instruction == True -%}
+You are a helpful assistant.
+{%- endif -%}
+
+{%- if is_user_instruction == True -%}
+You are an expert in Natural Language Processing that helps to identify clinical Named Entities (NER) in a given text.
+
+## Instruction
+Your task is to generate an HTML version of an input text, marking up specific entities related to healthcare. The entities to be identified are: symptom, disorder, drug, measurement, procedure, gene, gene-variant. Use HTML <span > tags to highlight these entities. Each <span > should have a class attribute indicating the type of the entity.
+
+## Entity markup guide
+Use <span class='symptom' > to denote a symptom.
+Use <span class='disorder' > to denote a disorder.
+Use <span class='drug' > to denote a drug.
+Use <span class='measurement' > to denote a measurement.
+Use <span class='procedure' > to denote a procedure.
+Use <span class='gene' > to denote a gene.
+Use <span class='gene-variant' > to denote a gene-variant.
+
+Leave the text as it is if no such entities are found.
+
+## Entity definitions
+A symptom can be defined as a physical or mental feature or sign indicating a condition or disease, typically noticed by the patient.
+A disorder can be defined as a disease or a condition that impairs normal functioning and is typically manifested by distinguishing signs and symptoms.
+A drug can be defined as a substance used (e.g., medication) in the diagnosis, treatment, or prevention of a disease or condition.
+A measurement can be defined as a clinical measurement and/or observation, including laboratory tests, vital signs, quantitative findings from pathology reports, etc.
+A procedure can be defined as a medical intervention performed to diagnose, treat, or monitor a patient condition, such as surgery or imaging.
+A gene can be defined as a unit of heredity composed of dna that influences specific traits or conditions.
+A gene-variant can be defined as an alteration in the dna sequence of a gene, which may affect how the gene functions and can be associated with disease.
+
+
+## Example
+Example Input: 
+He had been diagnosed with osteoarthritis of the knees and had undergone arthroscopy years prior to admission .
+Example Output: 
+He had been diagnosed with <span class="disease" >osteoarthritis of the knees</span >and had undergone <span class="procedure" >arthroscopy</span >years prior to admission .
+
+## Input: 
+{{ text }}
+
+## Output:
+{%- endif -%}

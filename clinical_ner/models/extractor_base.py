@@ -1,16 +1,18 @@
+import os
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union, Literal
 
-import jinja2
 import torch
+from jinja2 import Environment, FileSystemLoader
 
-from .span_dataclasses import NERSpans
+from .span_dataclasses import NERSpan, NERSpans
 from .output_parsers import output_parser_loader
+from .prompt_templates import PromptTemplate
 from .utils import (
     ceiling_division,
     get_char_label_map,
     get_list_of_token_label_tuples,
-    read_template,
+    merge_spans_with_same_labels,
     split_text_into_parts,
 )
 
@@ -134,11 +136,13 @@ class SpanExtractor(GenericSpanExtractor):
         """
         Handles max_length limitation and call extract_spans.
 
-        Note: The current implementation
-            - Assumes uniform token distriution with sentence chars/words.
+        Limitations: The current implementation assumes
+            - Uniform token distriution across sentence chars/words.
             If for some reason a specific sentence section has lot of tokens, this implementation might break.
                 - Should I add a try except block specifying this?
-            - Assumes non overlapping chunks and therefore does not deduplicate spans
+            - Non overlapping chunks and therefore does not deduplicate spans
+            - Assumes the majority of the expected_tokens_during_inference to come from the text length
+            If for decoder models, the prompt is the major contributor of expected tokens, then implementation might break
         """
         expected_tokens_during_inference = self._get_expected_sequence_length(text)
 
@@ -175,64 +179,91 @@ class EncoderSpanExtractor(SpanExtractor):
     def __init__(self, identifier: str, label_normalization_map: dict[str] = None):
         super().__init__(identifier, label_normalization_map)
 
-
 class DecoderSpanExtractor(SpanExtractor):
     def __init__(
             self, 
             identifier: str, 
             label_normalization_map=None,
-            prompt_file_path=None,
-            output_parsing_function_identifier: str = None,
+            prompt_template_identifier=None,
+            decoder_model_type:Literal["base", "chat"]="base",
+            # output_parsing_function_identifier: str = None,
             generation_parameters:dict=None,
+            # loop_for_each_entity:bool=True
             ):
         super().__init__(identifier, label_normalization_map)
-        self.prompt_file_path = prompt_file_path
-        self.prompt_template = self.load_prompt(self.prompt_file_path) if self.prompt_file_path is not None else None
-        self.output_parsing_function_identifier = output_parsing_function_identifier
-        self.output_parsing_function = output_parser_loader(output_parsing_function_identifier) if output_parsing_function_identifier is not None else None
+        self.prompt_template_identifier = prompt_template_identifier
+        self.prompt_template = PromptTemplate.from_predefined(prompt_template_identifier) if prompt_template_identifier is not None else None
+        # self.output_parsing_function_identifier = output_parsing_function_identifier
+        # self.parse_generated_output = output_parser_loader(output_parsing_function_identifier) if output_parsing_function_identifier is not None else None
+        self.decoder_model_type = decoder_model_type
         self.generation_parameters = generation_parameters
-
-    @staticmethod
-    def load_prompt(prompt_template_file_path: str) -> str:
-        """Returns the prompt with kwargs substititued in the string"""
-        template = read_template(prompt_template_file_path)
-        jinja_env = jinja2.Environment()
-        return jinja_env.from_string(template)
-
-    def load_prompt_with_variables(self, prompt_template, **kwargs) -> str:
-        return prompt_template.render(kwargs)
+        # self.loop_for_each_entity = loop_for_each_entity
     
     def set_attributes_for_dataset(self, **kwargs):
         super().set_attributes_for_dataset(**kwargs)
 
-        assert self.prompt_file_path is not None, "Can't perform inference without a prompt template"
-        self.prompt_template = self.load_prompt(self.prompt_file_path)
+        assert self.prompt_template_identifier is not None, "Can't perform inference without a prompt template"
+        self.prompt_template = PromptTemplate.from_predefined(self.prompt_template_identifier)
+        # assert self.output_parsing_function_identifier is not None, "Can't parse output without a parsing function"
+        # self.parse_generated_output = output_parser_loader(self.output_parsing_function_identifier)
 
-        assert self.output_parsing_function_identifier is not None, "Can't parse output without a parsing function"
-        self.output_parsing_function = output_parser_loader(self.output_parsing_function_identifier)
-
-    @abstractmethod
-    def create_model_input(self, text: str, entity: str):
+    def create_model_input(self, text: str=None, entity: str=None):
         """returns the model's inference input object.
         Used within the get_text_completion method. This output is used to call the model's inference method.
         """
-        pass
+        return self.prompt_template.create_model_input(text=text, entity=entity)
 
     @abstractmethod
     def get_text_completion(self, text: str, entity: str):
         """returns the object that will be fed to parse_generated_output method to get ner spans"""
         pass
 
-    @abstractmethod
-    def parse_generated_output(
-        self,
-        chat_completion_obj,
-        document_text: str,
-        entity: str,
-        normalized_label: str = None,
+    def _get_expected_sequence_length(self, text) -> int:
+        # In the line below, disease is a dummy entity.
+        # We have assumed that we'd run inference for one entity at a time
+        assert self.prompt_template is not None, "Can't run inference without prompt template"
+            
+        expected_sequence_text = self.prompt_template.get_expected_sequence_length_text(text)
+        return len(self.get_tokens(expected_sequence_text))  
+
+    def extract_spans_from_chunk(
+        self, text: str, label_normalization_map=None
     ) -> NERSpans:
-        """returns a list of ner spans of a single entity type from text
-        let us assume we have only one beam
-        ex - [{'generated_text': ' ["carcinoma"]'}]
-        """
-        pass
+        if label_normalization_map is None:
+            label_normalization_map = self.label_normalization_map
+
+        entities = list(set(label_normalization_map.keys()))
+
+        identified_spans = []
+        if self.prompt_template.loop_for_each_entity:
+            for entity in entities:
+                generated_text = self.get_text_completion(text, entity)
+                normalized_label = label_normalization_map.get(entity, None)
+                entity_ner_spans = self.prompt_template.parsing_function(
+                    generated_text, text, entity, normalized_label=normalized_label
+                )
+                identified_spans.extend(entity_ner_spans)
+        else:
+            generated_text = self.get_text_completion(text)
+            ner_spans = self.prompt_template.parsing_function(
+                generated_text, text
+            )
+            for ner_span in ner_spans:
+                if not label_normalization_map.get(ner_span.label, None):
+                    continue
+                identified_spans.append(NERSpan(
+                    start=ner_span.start,
+                    end=ner_span.end,
+                    span_text=ner_span.span_text,
+                    label=label_normalization_map[ner_span.label],
+                    confidence=-1,
+                ))
+
+        # here we need to sort and deduplicate(keeping the largest span for now)
+        if identified_spans:
+            identified_spans = sorted(
+                identified_spans, key=lambda x: (x.start, -len(x.span_text))
+            )
+            identified_spans = merge_spans_with_same_labels(identified_spans)
+
+        return NERSpans(parent_text=text, spans=identified_spans)

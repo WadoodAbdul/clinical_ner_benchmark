@@ -6,7 +6,7 @@ from .extractor_base import EncoderSpanExtractor
 from .span_dataclasses import NERSpan, NERSpans
 
 
-class GLIEncoderSpanExtractor(EncoderSpanExtractor):
+class GLiNEREncoderSpanExtractor(EncoderSpanExtractor):
     def __init__(
         self,
         identifier: str,
