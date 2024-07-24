@@ -237,14 +237,14 @@ class DecoderSpanExtractor(SpanExtractor):
         identified_spans = []
         if self.prompt_template.loop_for_each_entity:
             for entity in entities:
-                generated_text = self.get_text_completion(text, entity)
+                generated_text = self.get_text_completion(text=text, entity=entity)
                 normalized_label = label_normalization_map.get(entity, None)
                 entity_ner_spans = self.prompt_template.parsing_function(
                     generated_text, text, entity, normalized_label=normalized_label
                 )
                 identified_spans.extend(entity_ner_spans)
         else:
-            generated_text = self.get_text_completion(text)
+            generated_text = self.get_text_completion(text=text)
             ner_spans = self.prompt_template.parsing_function(
                 generated_text, text
             )
