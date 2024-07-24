@@ -36,7 +36,7 @@ class APIDecoderModel(ABC):
 
     @classmethod
     def from_predefined(cls, model_id):
-        if model_id in ["Meta-Llama-3-70b-Instruct", "Mixtral-8x7B-Instruct-v0.1", "Llama3-Med42-DPO-70B"]:
+        if model_id in ["Meta-Llama-3-70b-Instruct", "Mixtral-8x7B-Instruct-v0.1", "Llama3-Med42-DPO-70B", "Llama3-Med42-70B"]:
             return LocalHostedDecoderModel(model_id)
         elif model_id in [ "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]:
             return OpenAIDecoderModel(model_id)
@@ -106,13 +106,18 @@ class LocalHostedDecoderModel(APIDecoderModel):
 
     def __call__(self, model_input, **generation_params):
         """calls the text generation method and returns the generated text."""
-        response = self.client.chat.completions.create(
-            model=self.model_id,
-            messages=model_input,
-            **generation_params
-        )
-        output = response.choices[0].message.content
-        output = output.strip()
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_id,
+                messages=model_input,
+                **generation_params
+            )
+            output = response.choices[0].message.content
+            output = output.strip()
+        except Exception as e:
+            print(model_input)
+            print(e)
+            output = ""
         return output
 
 
