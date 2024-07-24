@@ -42,6 +42,7 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
             task="ner",
             aggregation_strategy=self.aggregation_strategy,
             device=self.device,
+            # device_map="auto", most encoder models would fit on a single GPU
         )
         hf_pipeline.model.eval()
         return hf_pipeline
@@ -124,13 +125,29 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
                          )
         default_generation_params = {"do_sample":False, 
                                      "return_full_text":False}
+        # print(identifier)
+        if identifier == "meta-llama/Meta-Llama-3-8B":
+            print(f" Setting gen config for llama3 8b instruct model")
+            terminators = [
+                    pipeline.tokenizer.eos_token_id,
+                    pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+                ]
+            default_generation_params = {
+                **default_generation_params,
+                "eos_token_id":terminators,
+            }
         self.generation_parameters = default_generation_params | generation_parameters
 
 
     def load_model(self, identifier=None):
         if identifier is None:
             identifier = self.identifier
-        model = pipeline("text-generation", model=identifier, device=self.device)
+        model = pipeline(
+            "text-generation", 
+            model=identifier, 
+            # device=self.device,
+            device_map="auto"
+            )
         model.model.eval()
         return model
 
@@ -154,7 +171,7 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
             "library_version" : transformers.__version__
         }
 
-    def get_text_completion(self, text: str, entity: str):
+    def get_text_completion(self, text: str=None, entity: str=None):
         model_input = self.prompt_template.create_model_input(text=text, entity=entity)
         self.generation_parameters['max_length'] = self.model_max_length
         # self.generation_parameters['max_length'] = self._get_expected_sequence_length(text) + 100
@@ -162,12 +179,17 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
             model_input,
             **self.generation_parameters
             )
+        # print(model_input)
+        # print(chat_completion)
         if self.prompt_template.decoder_model_type == "base":
             # we have num_return_sequences = 1
             generated_text = chat_completion[0]['generated_text']
             
         elif self.prompt_template.decoder_model_type == "chat":
-            generated_text = chat_completion[0]['generated_text'][-1]['content']
+            if self.identifier == "meta-llama/Meta-Llama-3-8B-Instruct":
+                generated_text = chat_completion[0]['generated_text'][-1] # ['content'] # because of models without chat func like meta llama3 8b instruct
+            else:
+                generated_text = chat_completion[0]['generated_text'][-1]['content']
 
         return generated_text
 
