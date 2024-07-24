@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from datasets import load_dataset
 
-from clinical_ner.evaluation.metrics import NERPartialSpanMetric
+from clinical_ner.evaluation.metrics import SpanBasedWithPartialOverlapMetric
 from clinical_ner.tasks.ner import load_and_prepare_dataset
 from ..base_tasks import Task, TaskDataset
 
@@ -17,7 +17,7 @@ TASK_NAME_HF_LINK_MAP = {
 
 class NERDataset(TaskDataset):
     task_type = Task.NAMED_ENTITY_RECOGNITION
-    metric = NERPartialSpanMetric()
+    metric = SpanBasedWithPartialOverlapMetric()
 
     def __init__(self, identifier) -> None:
         super().__init__(identifier)
@@ -56,6 +56,7 @@ class CHIA(NERDataset):
     def get_evaluation_split(self):
         return super().get_evaluation_split()
 
+
 class BIORED(NERDataset):
     evaluation_split = "test"
     clinical_types = ["condition", "drug", "gene", "gene variant"]
@@ -69,8 +70,8 @@ class BIORED(NERDataset):
 
     def get_evaluation_split(self):
         return super().get_evaluation_split()
-
         
+
 class BC5CDR(NERDataset):
     evaluation_split = "test"
     clinical_types = ["condition", "drug"]
