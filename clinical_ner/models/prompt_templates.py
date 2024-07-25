@@ -153,6 +153,7 @@ class LlamaNerPromptTemplate(PromptTemplate):
     def __init__(self) -> None:
         super().__init__()
 
+    @staticmethod
     def parsing_function(*args, **kwargs):
         return parse_from_list_of_span_texts(*args, **kwargs)
     

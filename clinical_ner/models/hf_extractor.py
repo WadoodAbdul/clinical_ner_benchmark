@@ -187,7 +187,7 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
             
         elif self.prompt_template.decoder_model_type == "chat":
             if self.identifier == "meta-llama/Meta-Llama-3-8B-Instruct":
-                generated_text = chat_completion[0]['generated_text'][-1] # ['content'] # because of models without chat func like meta llama3 8b instruct
+                generated_text = chat_completion[0]['generated_text'] # ['content'] # because of models without chat func like meta llama3 8b instruct
             else:
                 generated_text = chat_completion[0]['generated_text'][-1]['content']
 
