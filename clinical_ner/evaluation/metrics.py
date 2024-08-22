@@ -163,3 +163,11 @@ class TokenBasedWithWeightedAverageMetric(TokenBasedMetric):
     NAME = "TokenBasedWithWeightedAverage"
     SUB_TYPE = "weighted avg"
     INFO = ""
+
+SPAN_AND_TOKEN_METRICS_FOR_NER = [
+        SpanBasedWithPartialOverlapMetric, 
+        SpanBasedWithExactOverlapMetric,
+        TokenBasedWithMacroAverageMetric,
+        TokenBasedWithMicroAverageMetric,
+        TokenBasedWithWeightedAverageMetric,
+        ]

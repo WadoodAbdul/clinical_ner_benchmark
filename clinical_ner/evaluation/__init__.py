@@ -6,4 +6,5 @@ from clinical_ner.evaluation.metrics import (
     TokenBasedWithMacroAverageMetric,
     TokenBasedWithMicroAverageMetric,
     TokenBasedWithWeightedAverageMetric,
+    SPAN_AND_TOKEN_METRICS_FOR_NER,
 )
