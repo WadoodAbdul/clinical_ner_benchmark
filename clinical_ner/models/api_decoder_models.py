@@ -4,8 +4,14 @@ import logging
 import requests
 from abc import ABC, abstractmethod
 from typing import Generator
+from dotenv import load_dotenv
 
 from openai import OpenAI
+
+dotenv_path = os.path.join(os.path.abspath('../'), '.env')
+print(dotenv_path)
+load_dotenv(dotenv_path)
+
 
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -36,9 +42,22 @@ class APIDecoderModel(ABC):
 
     @classmethod
     def from_predefined(cls, model_id):
-        if model_id in ["Meta-Llama-3-70b-Instruct", "Mixtral-8x7B-Instruct-v0.1", "Llama3-Med42-DPO-70B", "Llama3-Med42-70B"]:
+        if model_id in [
+            "Meta-Llama-3-70b-Instruct", 
+            "Mixtral-8x7B-Instruct-v0.1", 
+            "Llama3-Med42-DPO-70B", 
+            "Llama3-Med42-70B",
+            'Llama3-OpenBioLLM-70B'
+            ]:
             return LocalHostedDecoderModel(model_id)
-        elif model_id in [ "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]:
+        elif model_id in [
+            "gpt-4o", 
+            "gpt-4o-2024-05-13",
+            "gpt-4o-mini",
+            "gpt-4o-mini-2024-07-18",
+            "gpt-4-turbo", 
+            "gpt-3.5-turbo"
+            ]:
             return OpenAIDecoderModel(model_id)
         raise NotImplementedError(f"APIDecoder class for {model_id=} has not been implemented or not added to the loader list")
         
@@ -123,13 +142,12 @@ class LocalHostedDecoderModel(APIDecoderModel):
 
 class OpenAIDecoderModel(APIDecoderModel):
     api_key=os.environ.get("OPENAI_API_KEY")
-    base_url="https://api.openai.com/v1"
+    base_url="https://api.openai.com/v1/"
 
-    def __init__(self, model_id: str, base_url: str) -> None:
-        super().__init__(model_id, base_url)
+    def __init__(self, model_id: str) -> None:
+        super().__init__(model_id)
         self.client = OpenAI(
             api_key=self.api_key, 
-            base_url=self.base_url
             )
         self.tokenizer = (
             WhitespaceTokenSplitter()
@@ -146,7 +164,9 @@ class OpenAIDecoderModel(APIDecoderModel):
         # info obtained from https://platform.openai.com/docs/models
         max_len_map = {
             "gpt-4o":128000, 
+            "gpt-4o-2024-05-13":128000,
             "gpt-4o-mini":128000, 
+            "gpt-4o-mini-2024-07-18":128000,
             "gpt-4-turbo":128000, 
             "gpt-3.5-turbo":16385,
             }
