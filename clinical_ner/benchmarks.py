@@ -1,18 +1,18 @@
-from .tasks import TaskDataset
 from .evaluation import (
-    NEREvaluationMetric, 
     SPAN_AND_TOKEN_METRICS_FOR_NER,
-    )
+    NEREvaluationMetric,
+)
 from .tasks import (
-    CHIA, 
-    NCBI, 
-    BIORED, 
-    BC5CDR, 
-    CHIA_PROMPT_ENGINEERING, 
-    NCBI_PROMPT_ENGINEERING, 
-    BIORED_PROMPT_ENGINEERING, 
+    BC5CDR,
     BC5CDR_PROMPT_ENGINEERING,
-    )
+    BIORED,
+    BIORED_PROMPT_ENGINEERING,
+    CHIA,
+    CHIA_PROMPT_ENGINEERING,
+    NCBI,
+    NCBI_PROMPT_ENGINEERING,
+)
+
 
 class Benchmark:
     def __init__(
@@ -32,7 +32,7 @@ class Benchmark:
         self.tasks = tasks  # of TaskDatasets
         self.clinical_types = clinical_types
         self.metrics_to_compute = metrics_to_compute
-        self.load_datasets() 
+        self.load_datasets()
 
     # def __iter__(self):
     #     return iter(self.tasks)
@@ -45,7 +45,7 @@ class Benchmark:
 
     def __call__(self, task_identifier):
         return getattr(self, task_identifier)
-    
+
     def load_datasets(self):
         tasks = []
         for task in self.tasks:
@@ -53,7 +53,7 @@ class Benchmark:
             task_dataset_name = task.identifier
             tasks.append(task_dataset_name)
             setattr(self, task_dataset_name, task)
-        
+
         self.tasks = tasks
 
     def __getitem__(self, attr):
@@ -68,8 +68,15 @@ MEDICS_NER = Benchmark(
         BIORED,
         BC5CDR,
     ],
-    clinical_types = ['condition', 'drug', 'procedure', 'measurement', 'gene', 'gene variant'],
-    metrics_to_compute = SPAN_AND_TOKEN_METRICS_FOR_NER,
+    clinical_types=[
+        "condition",
+        "drug",
+        "procedure",
+        "measurement",
+        "gene",
+        "gene variant",
+    ],
+    metrics_to_compute=SPAN_AND_TOKEN_METRICS_FOR_NER,
     description="",
     reference="",
     citation="""""",
@@ -83,7 +90,14 @@ PROMPT_TESTER = Benchmark(
         BIORED_PROMPT_ENGINEERING,
         BC5CDR_PROMPT_ENGINEERING,
     ],
-    clinical_types = ['condition', 'drug', 'procedure', 'measurement', 'gene', 'gene variant'],
+    clinical_types=[
+        "condition",
+        "drug",
+        "procedure",
+        "measurement",
+        "gene",
+        "gene variant",
+    ],
     metrics_to_compute=SPAN_AND_TOKEN_METRICS_FOR_NER,
     description="",
     reference="",

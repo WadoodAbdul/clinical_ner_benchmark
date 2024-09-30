@@ -13,6 +13,10 @@ class Task(Enum):
 
 
 class TaskDataset(ABC):
+    """
+    This base class is an abstraction for all datasets(belonging to the task enum above). 
+    The class will be used to create a benchmark which will by used by the evaluator class
+    """
     def __init__(
         self,
         identifier,
@@ -20,11 +24,11 @@ class TaskDataset(ABC):
         self.identifier = identifier
         self.dataset = self.load_data()
 
-    @classmethod
-    def from_predefined(cls, identifier, **kwargs):
-        from .dataset_loader import load_task_dataset
+    # @classmethod
+    # def from_predefined(cls, identifier, **kwargs):
+    #     from .ner_dataset_loader import load_task_dataset
 
-        return load_task_dataset(identifier, **kwargs)
+    #     return load_task_dataset(identifier, **kwargs)
 
     @property
     @abstractmethod
