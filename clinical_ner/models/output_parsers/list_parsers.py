@@ -1,24 +1,43 @@
+import ast
 import re
 
-from langchain_core.output_parsers.list import (
-    ListOutputParser,
-)
+from clinical_ner.models.span_dataclasses import NERSpan
 from clinical_ner.models.utils import (
     get_all_matches,
 )
-from clinical_ner.models.span_dataclasses import NERSpan, NERSpans
+
+from .parsed_output_dataclass import (
+    # IntermediateOutputs,
+    ParsedNEROutput,
+    ParsedPythonObject,
+    ParsingErrorStep,
+    ParsingReport,
+)
 
 
-def parse_generated_list(generated_text):
-    """returns a python list from a string representation of a list"""
+def parse_generated_list(generated_text: str) -> ParsedPythonObject:
+    """
+    returns a python list from a string representation of a list
+
+    Ensure the datatype of the elements of the list?
+    """
     # let's try re first
     pattern = r"'([^']*?)'(?:,|])"
     parsed_list = re.findall(pattern, generated_text)
+
+    parsing_success = True
+    original_generated_text = generated_text
+
     if parsed_list:
-        return parsed_list  # early exit, function getting ugly
+        return ParsedPythonObject(
+            parsed_output=parsed_list,
+            generated_text=original_generated_text,
+            parsing_success=parsing_success,
+        )
+        # return parsed_list  # early exit, function getting ugly
 
     try:
-        parsed_list = eval(generated_text)
+        parsed_list = ast.literal_eval(generated_text)
     except Exception:  # could fail due to syntax error or name error
         print(f"Failed parsing, {generated_text=}\nRetrying with formatting")
 
@@ -29,7 +48,7 @@ def parse_generated_list(generated_text):
             generated_text = generated_text.replace("]", "']")
 
         try:
-            parsed_list = eval(generated_text)
+            parsed_list = ast.literal_eval(generated_text)
         except Exception:  # could fail due to syntax error or name error
             print(f"Failed parsing w/ quotes fix, \n{generated_text=}")
 
@@ -39,23 +58,43 @@ def parse_generated_list(generated_text):
             list_string = "[" + list_string + "]"
 
             try:
-                parsed_list = eval(generated_text)
+                parsed_list = ast.literal_eval(generated_text)
             except Exception:
                 print(f"Failed parsing w/ newline fix, \n{generated_text=}")
-
+                parsing_success = False
                 parsed_list = []
 
-    return parsed_list
+    return ParsedPythonObject(
+        parsed_output=parsed_list,
+        generated_text=original_generated_text,
+        parsing_success=parsing_success,
+    )
 
-def parse_from_list_of_span_texts(generated_text,document_text, entity, normalized_label) -> list[NERSpan]:
+
+def parse_from_list_of_span_texts(
+    generated_text, document_text, entity, normalized_label
+) -> ParsedNEROutput:
     # Parsing function
-    identified_span_texts = parse_generated_list(generated_text)
+    parsed_python_object = parse_generated_list(generated_text)
+
+    if not parsed_python_object.parsing_success:
+        return ParsedNEROutput(
+            ner_spans=[],
+            intermediate_outputs=parsed_python_object,
+            parsing_report=ParsingReport(
+                parsing_error_step=ParsingErrorStep.PythonParsing,
+                parsing_error_message=parsed_python_object.parsing_error_message,
+            ),
+        )
 
     if normalized_label is None:
         normalized_label = entity
 
+    parsed_python_list = parsed_python_object.parsed_output
+    hallucination_counts = 0
+
     ner_spans = []
-    for span_text in identified_span_texts:
+    for span_text in parsed_python_list:
         try:
             matches = get_all_matches(span_text, document_text)
         except Exception as e:
@@ -64,6 +103,8 @@ def parse_from_list_of_span_texts(generated_text,document_text, entity, normaliz
 
         if not matches:
             print(f"Entity not found, {span_text=}\n{document_text=}")
+            hallucination_counts += 1
+
         for span_start, span_end in matches:
             ner_spans.append(
                 NERSpan(
@@ -74,31 +115,8 @@ def parse_from_list_of_span_texts(generated_text,document_text, entity, normaliz
                     confidence=-1,
                 )
             )
-    return ner_spans
-
-class PythonListOutputParser(ListOutputParser):
-    """Parse the output of an LLM call to a comma-separated list."""
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "output_parsers", "list"]
-
-    def get_format_instructions(self) -> str:
-        return (
-            "Your response should be a list of comma separated values, sandwiched between square brackets "
-            """eg: '["a", "b"]' or `['substring', 'ag']`"""
-        )
-
-    def parse(self, text: str) -> list[str]:
-        """Parse the output of an LLM call."""
-        return parse_generated_list(text)
-
-    @property
-    def _type(self) -> str:
-        return "python-list-separated-by-commas"
-
+    return ParsedNEROutput(
+        ner_spans=ner_spans,
+        intermediate_outputs=parsed_python_object,
+        parsing_report=ParsingReport(hallucination_counts=hallucination_counts),
+    )

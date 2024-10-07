@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import os
 from datetime import datetime
@@ -5,16 +6,12 @@ from datetime import datetime
 import pandas as pd
 from datasets import Dataset, load_from_disk
 from nervaluate import Evaluator
-
-# from sklearn.metrics import classification_report
-# from seqeval.metrics import classification_report
 from sklearn.metrics import (
     classification_report,  # sklearn and torch are not on talking
 )
 from tqdm import tqdm
 
-
-from .utils import save_dict_to_json, calculate_f1_score, explode_list
+from .utils import calculate_f1_score, explode_list, save_dict_to_json
 
 EVALUATION_RESULTS_FOLDER_PATH = "../data/evaluation_results/"
 
@@ -93,8 +90,13 @@ def get_ground_truth_and_predictions(
     token_predictions = []
     token_ground_truths = []
 
+    raw_outputs = []
+
     for data_point in tqdm(eval_dataset):
-        datapoint_pred = ner_processor(data_point["text"])
+        datapoint_ner_output = ner_processor(data_point["text"])
+        raw_outputs.append(dataclasses.asdict(datapoint_ner_output))
+
+        datapoint_pred = datapoint_ner_output.ner_spans
 
         pred_token_labels = ner_processor.get_token_level_ner_output_from_spans(
             datapoint_pred
@@ -113,6 +115,7 @@ def get_ground_truth_and_predictions(
     eval_dataset = eval_dataset.add_column("predicted_spans", span_predictions)
     eval_dataset = eval_dataset.add_column("ground_truth_tokens", token_ground_truths)
     eval_dataset = eval_dataset.add_column("predicted_tokens", token_predictions)
+    eval_dataset = eval_dataset.add_column("raw_output", raw_outputs)
 
     save_path = os.path.join(model_dataset_folder_path, "outputs")
     if not os.path.exists(save_path):
@@ -120,7 +123,6 @@ def get_ground_truth_and_predictions(
     eval_dataset.save_to_disk(save_path)
 
     return span_ground_truths, span_predictions, token_ground_truths, token_predictions
-
 
 
 def get_span_level_metrics(span_ground_truths, span_predictions, labels):
@@ -191,36 +193,6 @@ def get_metrics(
     return metrics
 
 
-def save_metrics(span_metrics, model_dataset_folder_path):
-    # if (token_metrics := evaluation_metrics.get("token_metrics", None)) is not None:
-    #     save_path = os.path.join(model_dataset_folder_path, "token_level")
-    #     if not os.path.exists(save_path):
-    #         os.makedirs(save_path)
-    #     token_metrics["cls_report"].round(4).to_csv(
-    #         os.path.join(save_path, "classification_report.tsv"),
-    #         sep="\t",
-    #     )
-    #     token_metrics["confusion_matrix"].to_csv(
-    #         os.path.join(save_path, "confusion_matrix.csv"),
-    #     )
-
-    # if (span_metrics := evaluation_metrics.get("span_metrics", None)) is not None:
-    save_path = os.path.join(model_dataset_folder_path, "span_level/")
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    save_dict_to_json(
-        dict_variable=span_metrics["results"],
-        file_path=os.path.join(save_path, "results.json"),
-    )
-    save_dict_to_json(
-        dict_variable=span_metrics["results_per_tag"],
-        file_path=os.path.join(
-            save_path,
-            "results_per_tag.json",
-        ),
-    )
-
-
 def evaluate(
     ner_processor, eval_dataset, model_dataset_folder_path, run_inference=True
 ):
@@ -258,6 +230,6 @@ def evaluate(
         labels=list(set(ner_processor.label_normalization_map.values())),
     )
 
-    save_metrics(evaluation_results, model_dataset_folder_path)
+    # save_metrics(evaluation_results, model_dataset_folder_path)
 
     return evaluation_results

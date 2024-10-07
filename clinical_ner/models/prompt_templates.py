@@ -66,15 +66,29 @@ class PromptTemplate(ABC):
 
     # def load_prompt_with_variables(self, prompt_template, **kwargs) -> str:
     #     return prompt_template.render(kwargs)
+
+    @abstractmethod
+    def get_expected_input_text(self, *args, **kwargs) -> str:
+        """
+        Returns the expected input text formed from the prompt, based on the inputs
+        """
+        pass
+
+    @abstractmethod
+    def get_expected_output_text(self, *args, **kwargs) -> str:
+        """
+        Returns the expected output/generated text for the prompt template, this represents the biggest possible generation
+        """
+        pass
     
     @abstractmethod
-    def get_expected_sequence_length_text(self, text) -> int:
+    def get_expected_sequence_length_text(self, *args, **kwargs) -> str:
         """
         Returns the expected text tokens in the prepared_input + expected_output.
         This will be used to pass to the tokenizer, get expected tokens num, which will be used for chunking
         Different prompts can warrant a different generation length to solve the task. 
         """
-        pass
+        return self.get_expected_input_text(*args, **kwargs) + self.get_expected_output_text(*args, **kwargs)
 
     @abstractmethod
     def create_model_input(self, *args, **kwargs):
@@ -95,10 +109,19 @@ class UniversalNERPromptTemplate(PromptTemplate):
     @staticmethod
     def parsing_function(*args, **kwargs):
         return parse_from_list_of_span_texts(*args, **kwargs)
+    
+    def get_expected_input_text(self, text) -> str:
+        return self.create_model_input(text=text, entity="dummy_entity")
 
-    def get_expected_sequence_length_text(self, text) -> str:
-        return self.create_model_input(text=text, entity="dummy_entity") + " word"*300 # 300 is arbitrary here, this should be proportional to the number of words in the entities in the text
+    def get_expected_output_text(self, expected_entity_counts) -> str:
+        """
+        The generated output will ideally be a list of strings
+        """
+        return "[" "'medical entity', "*expected_entity_counts + "]"
 
+    def get_expected_sequence_length_text(self, text, expected_entity_counts=300) -> str:
+        return self.get_expected_input_text(text) + self.get_expected_output_text(expected_entity_counts)
+    
     def create_model_input(self, **prompt_variables) -> str:
         return self.prompt_template.render({
             "text":prompt_variables['text'],
@@ -117,12 +140,19 @@ class LLMHTMLSpansPromptTemplate(PromptTemplate):
     @staticmethod
     def parsing_function(*args, **kwargs):
         return parse_from_html_spans(*args, **kwargs)
-
-    def get_expected_sequence_length_text(self, text) -> str:
+    
+    def get_expected_input_text(self, text) -> str:
         model_input = self.create_model_input(text=text)
-        input_text = " ".join([ins["content"] for ins in model_input])
+        return " ".join([ins["content"] for ins in model_input])
 
-        return input_text + text + '<span class="disease" > </span >'*300
+    def get_expected_output_text(self, expected_entity_counts) -> str:
+        """
+        The generated output will be the input text highlighted with html spans
+        """
+        return '<span class="disease" > medical entity </span >'*expected_entity_counts
+
+    def get_expected_sequence_length_text(self, text, expected_entity_counts=300) -> str:
+        return self.get_expected_input_text(text) + self.get_expected_output_text(expected_entity_counts)
     
     def create_model_input(self, **prompt_variables) -> list:
         system_instruction = self.prompt_template.render(
@@ -156,12 +186,19 @@ class LlamaNerPromptTemplate(PromptTemplate):
     @staticmethod
     def parsing_function(*args, **kwargs):
         return parse_from_list_of_span_texts(*args, **kwargs)
-    
-    def get_expected_sequence_length_text(self, text) -> str:
-        model_input = self.create_model_input(text=text, entity="disease")
-        input_text = " ".join([ins["content"] for ins in model_input])
 
-        return input_text +  " word"*300
+    def get_expected_input_text(self, text, entity="disease") -> str:
+        model_input = self.create_model_input(text=text, entity=entity)
+        return " ".join([ins["content"] for ins in model_input])
+
+    def get_expected_output_text(self, expected_entity_counts) -> str:
+        """
+        The generated output will be a list of strings
+        """
+        return "[" "'medical entity', "*expected_entity_counts + "]"
+
+    def get_expected_sequence_length_text(self, text, entity="disease", expected_entity_counts=300) -> str:
+        return self.get_expected_input_text(text, entity) + self.get_expected_output_text(expected_entity_counts)
     
     def create_model_input(self, **prompt_variables) -> list:
         system_instruction = self.prompt_template.render(
@@ -184,39 +221,28 @@ class LlamaNerPromptTemplate(PromptTemplate):
 
         return messages
 
-class LLMHTMLSpansPromptTemplateV1(PromptTemplate):
+class LLMHTMLSpansPromptTemplateV1(LLMHTMLSpansPromptTemplate):
     prompt_template_filename="llm_html_highlighted_spans_v1"
+
+
+class DummyPromptTemplate(PromptTemplate):
+    prompt_template_filename="dummy_ner_template"
+    # parsing_function=parse_from_list_of_span_texts
     decoder_model_type="chat"
-    loop_for_each_entity=False
+    loop_for_each_entity=True
     def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
     def parsing_function(*args, **kwargs):
-        return parse_from_html_spans(*args, **kwargs)
+        # return 
+        return parse_from_list_of_span_texts(*args, **kwargs)
 
     def get_expected_sequence_length_text(self, text) -> str:
-        model_input = self.create_model_input(text=text)
-        input_text = " ".join([ins["content"] for ins in model_input])
+        return self.create_model_input(text=text, entity="dummy_entity") + " word"*300 # 300 is arbitrary here, this should be proportional to the number of words in the entities in the text
 
-        return input_text + text + '<span class="disease" > </span >'*300
-    
-    def create_model_input(self, **prompt_variables) -> list:
-        system_instruction = self.prompt_template.render(
-            {
-                "is_system_instruction": True
-            }
-        )
-        user_instruction = self.prompt_template.render(
-            {
-                "is_user_instruction": True,
-                "text": prompt_variables["text"],
-            }
-        )
-
-        messages = [
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": user_instruction},
-            ]
-
-        return messages
+    def create_model_input(self, **prompt_variables) -> str:
+        return self.prompt_template.render({
+            "text":prompt_variables['text'],
+            "entity":prompt_variables['entity'],
+            })

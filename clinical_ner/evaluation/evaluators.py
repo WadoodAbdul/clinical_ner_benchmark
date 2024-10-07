@@ -1,11 +1,12 @@
 import json
 import os
-from collections import defaultdict
+
+# from collections import defaultdict
 from datetime import datetime
 
 import clinical_ner.evaluation.ner_utils as ner_utils
+from clinical_ner.evaluation.metrics import NEREvaluationMetric, NERObjectType
 from clinical_ner.tasks import Task
-from clinical_ner.evaluation.metrics import NERObjectType, NEREvaluationMetric
 
 
 def get_ground_truth_and_predictions(model, dataset, output_dir):
@@ -22,21 +23,29 @@ class Evaluator:
         self.model = model
         self.benchmark = benchmark
         self.dataset_wise_config = dataset_wise_config
-        self.output_dir = "../data/outputs" if output_dir is None else output_dir            
+        self.output_dir = "../data/outputs" if output_dir is None else output_dir
         self.output_dir = os.path.join(self.output_dir, model.identifier)
         self.execution_time_stamp = str(datetime.now().strftime("%Y-%m-%d--%H-%M-%S"))
-        self.output_dir = os.path.join(self.output_dir, f"outputs_{self.execution_time_stamp}")
+        self.output_dir = os.path.join(
+            self.output_dir, f"outputs_{self.execution_time_stamp}"
+        )
 
         assert set(benchmark.tasks) == set(dataset_wise_config.keys())
 
-    def evaluate_model_on_dataset(self, model, dataset, model_dataset_outputs_dir:str, metrics_to_compute:list[NEREvaluationMetric]):
+    def evaluate_model_on_dataset(
+        self,
+        model,
+        dataset,
+        model_dataset_outputs_dir: str,
+        metrics_to_compute: list[NEREvaluationMetric],
+    ):
         """
         Returns the evaluation metric of a model on a dataset.
         Note: the model object is expected to be set for the dataset passed.
         """
 
-        span_ground_truths, span_predictions, token_ground_truths, token_predictions = get_ground_truth_and_predictions(
-            model, dataset, model_dataset_outputs_dir
+        span_ground_truths, span_predictions, token_ground_truths, token_predictions = (
+            get_ground_truth_and_predictions(model, dataset, model_dataset_outputs_dir)
         )
 
         metric_wise_result_on_dataset = {}
@@ -44,16 +53,16 @@ class Evaluator:
             if metric.NER_OBJECT_TYPE == NERObjectType.SpanBased:
                 ground_truths, predictions = span_ground_truths, span_predictions
             elif metric.NER_OBJECT_TYPE == NERObjectType.TokenBased:
-                ground_truths, predictions = token_ground_truths, token_predictions 
+                ground_truths, predictions = token_ground_truths, token_predictions
             else:
                 print(f"{metric.NAME=} does not have a well defined ner object type")
 
             metric_result = metric.compute_metrics(
-                ground_truths, 
-                predictions, 
-                dataset.clinical_types, 
-                model_dataset_outputs_dir
-                )
+                ground_truths,
+                predictions,
+                dataset.clinical_types,
+                model_dataset_outputs_dir,
+            )
             metric_wise_result_on_dataset[metric.NAME] = metric_result
         # evaluation_metrics = dataset.metric.compute_metrics(
         #     ground_truth,
@@ -78,10 +87,9 @@ class Evaluator:
 
         with open(os.path.join(self.output_dir, "inference_config.json"), "w") as f:
             json.dump(inference_config, f)
-        
 
     def save_benchmark_metrics(self, dataset_wise_metrics):
-        """ 
+        """
         Saves the results json file that will be used by the leaderboard.
         The dataset and clinical entity are both macro averages
         """
@@ -89,25 +97,51 @@ class Evaluator:
 
         for dataset_name, dataset_results in dataset_wise_metrics.items():
             for evaluation_metric, eval_metric_results in dataset_results.items():
+                evaluation_metric_results[evaluation_metric] = (
+                    evaluation_metric_results.get(evaluation_metric, {})
+                )
 
-                evaluation_metric_results[evaluation_metric] = evaluation_metric_results.get(evaluation_metric, {})
+                evaluation_metric_results[evaluation_metric]["dataset_results"] = (
+                    evaluation_metric_results[
+                        evaluation_metric
+                    ].get("dataset_results", {})
+                )
+                evaluation_metric_results[evaluation_metric][
+                    "clinical_type_results"
+                ] = evaluation_metric_results[evaluation_metric].get(
+                    "clinical_type_results", {}
+                )
 
-                evaluation_metric_results[evaluation_metric]["dataset_results"] = evaluation_metric_results[evaluation_metric].get("dataset_results", {})
-                evaluation_metric_results[evaluation_metric]["clinical_type_results"] = evaluation_metric_results[evaluation_metric].get("clinical_type_results", {})
+                evaluation_metric_results[evaluation_metric]["dataset_results"][
+                    dataset_name.lower()
+                ] = {"f1": round(eval_metric_results.score * 100, 2)}
+                for clinical_type, clinical_type_results_dict in eval_metric_results[
+                    "entity_wise_results"
+                ].items():
+                    clinical_type_score = clinical_type_results_dict["f1"]
 
-                evaluation_metric_results[evaluation_metric]["dataset_results"][dataset_name.lower()] = {"f1":round(eval_metric_results.score * 100, 2)}
-                for clinical_type, clinical_type_results_dict in eval_metric_results['entity_wise_results'].items():
-                    clinical_type_score = clinical_type_results_dict['f1']
+                    evaluation_metric_results[evaluation_metric][
+                        "clinical_type_results"
+                    ][clinical_type] = evaluation_metric_results[evaluation_metric][
+                        "clinical_type_results"
+                    ].get(clinical_type, [])
+                    evaluation_metric_results[evaluation_metric][
+                        "clinical_type_results"
+                    ][clinical_type].append(clinical_type_score)
 
-                    evaluation_metric_results[evaluation_metric]["clinical_type_results"][clinical_type] = evaluation_metric_results[evaluation_metric]["clinical_type_results"].get(clinical_type, [])
-                    evaluation_metric_results[evaluation_metric]["clinical_type_results"][clinical_type].append(clinical_type_score)
-
-        mean = lambda score_list : sum(score_list) / len(score_list)
+        mean = lambda score_list: sum(score_list) / len(score_list)
         for evaluation_metric, eval_metric_results in evaluation_metric_results.items():
-            eval_metric_results['clinical_type_results'] = {k:{'f1':round((mean(v)*100),2)} for k,v in eval_metric_results['clinical_type_results'].items()}
+            eval_metric_results["clinical_type_results"] = {
+                k: {"f1": round((mean(v) * 100), 2)}
+                for k, v in eval_metric_results["clinical_type_results"].items()
+            }
 
-
-        with open(os.path.join(self.output_dir, f"{self.benchmark.name.lower()}_results.json"), "w") as f:
+        with open(
+            os.path.join(
+                self.output_dir, f"{self.benchmark.name.lower()}_results.json"
+            ),
+            "w",
+        ) as f:
             json.dump(evaluation_metric_results, f)
 
         return evaluation_metric_results
@@ -119,6 +153,9 @@ class Evaluator:
 
         dataset_wise_metrics = {}
         dataset_wise_configs = {}
+        additional_dataset_wise_metrics = {}
+
+        self.save_model_inference_config(dataset_wise_configs)
 
         for dataset_name, dataset_config in self.dataset_wise_config.items():
             # sets the attributes of the model object to get outputs aligned to the datasets.
@@ -134,10 +171,21 @@ class Evaluator:
                 os.makedirs(dataset_outputs_dir)
 
             evaluation_metric_wise_result_on_dataset = self.evaluate_model_on_dataset(
-                self.model, benchmark_dataset, dataset_outputs_dir, self.benchmark.metrics_to_compute
+                self.model,
+                benchmark_dataset,
+                dataset_outputs_dir,
+                self.benchmark.metrics_to_compute,
             )
 
-            dataset_wise_metrics[dataset_name] = evaluation_metric_wise_result_on_dataset
+            if getattr(self.model, "model_type", None) == "decoder":
+                additional_dataset_wise_metrics[dataset_name] = {
+                    "parsing_outcome_counts_dict": self.model.parsing_outcome_counts_dict,
+                    "hallucination_counter": self.model.hallucination_counter,
+                }
+
+            dataset_wise_metrics[dataset_name] = (
+                evaluation_metric_wise_result_on_dataset
+            )
             dataset_wise_configs[dataset_name] = self.model.get_inference_config()
             # ner_utils.save_metrics(evaluation_metrics, dataset_outputs_dir)
 
@@ -145,5 +193,8 @@ class Evaluator:
         print(dataset_wise_metrics)
         benchmark_metrics = self.save_benchmark_metrics(dataset_wise_metrics)
 
-
+        with open(
+            os.path.join(self.output_dir, "additional_dataset_wise_metrics.json"), "w"
+        ) as f:
+            json.dump(additional_dataset_wise_metrics, f)
         return dataset_wise_metrics, benchmark_metrics

@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple
 from transformers import pipeline
 
 from .extractor_base import DecoderSpanExtractor, EncoderSpanExtractor
+from .model_output_dataclass import TextGenerationOutput
 from .span_dataclasses import NERSpan, NERSpans
 from .utils import (
     get_all_matches,
@@ -17,10 +18,10 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
         self,
         identifier: str,
         label_normalization_map: Optional[Dict] = None,
-        aggregation_strategy:str = "max"
+        aggregation_strategy: str = "max",
     ):
         self.aggregation_strategy = aggregation_strategy
-        
+
         super().__init__(identifier, label_normalization_map)
         self.model_entities = get_iob_stripped_entity_set(
             list(self.model.model.config.label2id.keys())
@@ -30,8 +31,6 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
             self.label_normalization_map = {
                 ent: ent.lower() for ent in self.model_entities
             }
-        
-        
 
     def load_model(self, identifier=None):
         if identifier is None:
@@ -60,14 +59,14 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
 
     def _get_expected_sequence_length(self, text) -> int:
         return len(self.get_tokens(text)) + 2
-    
+
     def get_inference_config(self) -> Dict:
         import transformers
-        
+
         return {
-            "label_normalization_map" : self.label_normalization_map,
+            "label_normalization_map": self.label_normalization_map,
             "aggregation_strategy": self.aggregation_strategy,
-            "library_version" : transformers.__version__
+            "library_version": transformers.__version__,
         }
 
     def extract_spans_from_chunk(
@@ -116,38 +115,37 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
         identifier: str,
         label_normalization_map=None,
         prompt_template_identifier: str = None,
-        generation_parameters:dict = {},
+        generation_parameters: dict = {},
     ):
-        super().__init__(identifier, 
-                         label_normalization_map=label_normalization_map,
-                         prompt_template_identifier=prompt_template_identifier,
-                         generation_parameters=generation_parameters,
-                         )
-        default_generation_params = {"do_sample":False, 
-                                     "return_full_text":False}
+        super().__init__(
+            identifier,
+            label_normalization_map=label_normalization_map,
+            prompt_template_identifier=prompt_template_identifier,
+            generation_parameters=generation_parameters,
+        )
+        default_generation_params = {"do_sample": False, "return_full_text": False}
         # print(identifier)
         if identifier == "meta-llama/Meta-Llama-3-8B":
             print(f" Setting gen config for llama3 8b instruct model")
             terminators = [
-                    pipeline.tokenizer.eos_token_id,
-                    pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
-                ]
+                pipeline.tokenizer.eos_token_id,
+                pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+            ]
             default_generation_params = {
                 **default_generation_params,
-                "eos_token_id":terminators,
+                "eos_token_id": terminators,
             }
         self.generation_parameters = default_generation_params | generation_parameters
-
 
     def load_model(self, identifier=None):
         if identifier is None:
             identifier = self.identifier
         model = pipeline(
-            "text-generation", 
-            model=identifier, 
+            "text-generation",
+            model=identifier,
             # device=self.device,
-            device_map="auto"
-            )
+            device_map="auto",
+        )
         model.model.eval()
         return model
 
@@ -160,36 +158,44 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
     def get_token_offsets(self, text: str) -> list[tuple[int, int]]:
         return self.model.tokenizer(text, return_offsets_mapping=True)[
             "offset_mapping"
-        ][1:]       
-    
+        ][1:]
+
     def get_inference_config(self) -> Dict:
         import transformers
+
         return {
-            "label_normalization_map" : self.label_normalization_map,
-            "generation_parameters" : self.generation_parameters,
-            "prompt_template_identifier" : self.prompt_template_identifier,
-            "library_version" : transformers.__version__
+            "label_normalization_map": self.label_normalization_map,
+            "generation_parameters": self.generation_parameters,
+            "prompt_template_identifier": self.prompt_template_identifier,
+            "library_version": transformers.__version__,
         }
 
-    def get_text_completion(self, text: str=None, entity: str=None):
+    def get_text_completion(
+        self, text: str = None, entity: str = None
+    ) -> TextGenerationOutput:
         model_input = self.prompt_template.create_model_input(text=text, entity=entity)
-        self.generation_parameters['max_length'] = self.model_max_length
+        self.generation_parameters["max_length"] = self.model_max_length
         # self.generation_parameters['max_length'] = self._get_expected_sequence_length(text) + 100
-        chat_completion = self.model(
-            model_input,
-            **self.generation_parameters
-            )
+        chat_completion = self.model(model_input, **self.generation_parameters)
         # print(model_input)
         # print(chat_completion)
         if self.prompt_template.decoder_model_type == "base":
             # we have num_return_sequences = 1
-            generated_text = chat_completion[0]['generated_text']
-            
+            generated_text = chat_completion[0]["generated_text"]
+
         elif self.prompt_template.decoder_model_type == "chat":
-            if self.identifier == "meta-llama/Meta-Llama-3-8B-Instruct":
-                generated_text = chat_completion[0]['generated_text'] # ['content'] # because of models without chat func like meta llama3 8b instruct
+            if self.identifier in [
+                "meta-llama/Meta-Llama-3-8B-Instruct",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct",
+            ]:
+                generated_text = chat_completion[
+                    0
+                ][
+                    "generated_text"
+                ]  # ['content'] # because of models without chat func like meta llama3 8b instruct
             else:
-                generated_text = chat_completion[0]['generated_text'][-1]['content']
+                generated_text = chat_completion[0]["generated_text"][-1]["content"]
 
-        return generated_text
-
+        return TextGenerationOutput(
+            model_input=model_input, generated_text=generated_text
+        )
