@@ -9,12 +9,12 @@ For reproducing the model result, use the snippet below. The configs are provide
 ```python
 from clinical_ner.models import SpanExtractor
 from clinical_ner.evaluation import Evaluator
-from clinical_ner.benchmarks import MEDICS_NER
+from clinical_ner.benchmarks import NCER
 from clinical_ner.leaderboard import get_leaderboard_models
 
 model_name = "alvaroalon2/biobert_diseases_ner"
 
-benchmark = MEDICS_NER 
+benchmark = NCER 
 
 # the below config is model and dataset specific. To reproduce the results, we load the config from the inference_configs folder
 model, dataset_wise_config = load_leaderboard_model_and_config(model_name)

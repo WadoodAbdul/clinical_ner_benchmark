@@ -1,4 +1,4 @@
-<h1 align="center">Clinical NER Benchmark</h1>
+<h1 align="center">NCER | Clinical NER Benchmark</h1>
 
 <!-- <p align="center">
     <a href="https://github.com/embeddings-benchmark/mteb/releases">
@@ -45,17 +45,17 @@ pip install -e .
 ```python
 from clinical_ner.models import SpanExtractor
 from clinical_ner.evaluation import Evaluator
-from clinical_ner.benchmarks import MEDICS_NER
+from clinical_ner.benchmarks import NCER
 
 model_name = "alvaroalon2/biobert_diseases_ner"
 
-benchmark = MEDICS_NER 
+benchmark = NCER 
 
 # the below config is model and dataset specific. This should contain config for all datasets in the loaded benchmark
 dataset_wise_config = {
         "NCBI": {"label_normalization_map": {"DISEASE": "condition"}}
     }
-# load a predefined model (or for a custom implementation see https://github.com/WadoodAbdul/medics_ner/blob/main/docs/custom_model_implementation.md)
+# load a predefined model (or for a custom implementation see https://github.com/WadoodAbdul/clinical_ner_benchmark/blob/master/docs/custom_model_implementation.md)
 model = SpanExtractor.from_predefined(model_name)
 
 evaluator = Evaluator(model, benchmark=benchmark, dataset_wise_config=dataset_wise_config)
@@ -96,7 +96,7 @@ class MyCustomModel(GenericSpanExtractor):
 
 
 model = MyModel()
-benchmark = MEDICS_NER 
+benchmark = NCER 
 
 # the below config is model and dataset specific.
 dataset_wise_config = {
@@ -134,14 +134,15 @@ More information on custom implementation can be found [here](docs/custom_model_
 
 
 ```bibtex
-@article{,
-  doi = {},
-  url = {},
-  author = {},
-  title = {},
-  publisher = {},
-  journal={},  
-  year = {}
+@misc{abdul2024namedclinicalentityrecognition,
+      title={Named Clinical Entity Recognition Benchmark}, 
+      author={Wadood M Abdul and Marco AF Pimentel and Muhammad Umar Salman and Tathagata Raha and Clément Christophe and Praveen K Kanithi and Nasir Hayat and Ronnie Rajan and Shadab Khan},
+      year={2024},
+      eprint={2410.05046},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={
+https://arxiv.org/abs/2410.05046}, 
 }
 ```
 

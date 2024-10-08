@@ -31,7 +31,7 @@ class MyCustomModel(GenericSpanExtractor):
 
 
 model = MyModel()
-benchmark = MEDICS_NER 
+benchmark = NCER 
 
 # the below config is model and dataset specific.
 dataset_wise_config = {

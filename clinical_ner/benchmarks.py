@@ -60,8 +60,8 @@ class Benchmark:
         return getattr(self, attr)
 
 
-MEDICS_NER = Benchmark(
-    name="MEDICS_NER",
+NCER = Benchmark(
+    name="NCER",
     tasks=[
         NCBI,
         CHIA,
