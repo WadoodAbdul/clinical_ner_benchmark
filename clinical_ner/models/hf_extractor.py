@@ -3,7 +3,11 @@ from typing import Dict, Optional, Tuple
 from transformers import pipeline
 
 from .extractor_base import DecoderSpanExtractor, EncoderSpanExtractor
-from .model_output_dataclass import TextGenerationOutput
+from .model_output_dataclass import (
+    IntermediateOutputs,
+    NERChunkOutput,
+    TextGenerationOutput,
+)
 from .span_dataclasses import NERSpan, NERSpans
 from .utils import (
     get_all_matches,
@@ -106,7 +110,15 @@ class HFEncoderSpanExtractor(EncoderSpanExtractor):
                 )
             )
 
-        return NERSpans(parent_text=text, spans=spans)
+        # return NERSpans(parent_text=text, spans=spans)
+        return NERChunkOutput(
+            ner_spans=NERSpans(parent_text=text, spans=spans),
+            intermediate_outputs=IntermediateOutputs(
+                model_io=[],
+                entities=[],
+                label_normalization_map=label_normalization_map,
+            ),
+        )
 
 
 class HFDecoderSpanExtractor(DecoderSpanExtractor):
@@ -126,7 +138,7 @@ class HFDecoderSpanExtractor(DecoderSpanExtractor):
         default_generation_params = {"do_sample": False, "return_full_text": False}
         # print(identifier)
         if identifier == "meta-llama/Meta-Llama-3-8B":
-            print(f" Setting gen config for llama3 8b instruct model")
+            print(" Setting gen config for llama3 8b instruct model")
             terminators = [
                 pipeline.tokenizer.eos_token_id,
                 pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>"),

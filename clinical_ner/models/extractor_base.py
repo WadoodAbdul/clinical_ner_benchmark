@@ -167,10 +167,10 @@ class SpanExtractor(GenericSpanExtractor):
 
             previous_text_length = 0
             all_spans = []
-            chunk_outputs = []
+            intermediate_chunk_outputs = []
             for chunk in chunks:
                 ner_chunk_output = self.extract_spans_from_chunk(chunk, **kwargs)
-                chunk_outputs.append(ner_chunk_output)
+                intermediate_chunk_outputs.append(ner_chunk_output.intermediate_outputs)
                 spans = ner_chunk_output.ner_spans.spans
                 _ = [
                     span.update_offset(previous_text_length) for span in spans
@@ -186,7 +186,7 @@ class SpanExtractor(GenericSpanExtractor):
             ner_output = NEROutput(
                 ner_spans=ner_spans,
                 text_chunks=chunks,
-                chunkwise_intermediate_outputs=chunk_outputs,
+                chunkwise_intermediate_outputs=intermediate_chunk_outputs,
             )
         else:
             ner_chunk_output = self.extract_spans_from_chunk(text, **kwargs)
