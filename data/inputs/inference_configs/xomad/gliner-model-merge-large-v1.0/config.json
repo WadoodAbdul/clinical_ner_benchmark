@@ -1,0 +1,44 @@
+{
+    "model_name": "xomad/gliner-model-merge-large-v1.0",
+    "revision": "main",
+    "model_architecture": "GLiNER Encoder",
+    "status": "RERUN",
+    "submitted_time": "2024-10-08 19: 28: 43+0000" ,
+    "model_type": "zero-shot",
+    "likes": 9,
+    "num_params": 0,
+    "license": "apache-2.0",
+    "private": false,
+    "inference_config": {
+        "label_normalization_map": {
+            "NCBI": {
+                "disease": "condition",
+                "medical condition": "condition"
+            },
+            "CHIA": {
+                "drug": "drug",
+                "chemical": "drug",
+                "medical condition": "condition",
+                "disease": "condition",
+                "procedure": "procedure",
+                "measurement": "measurement"
+            },
+            "BIORED": {
+                "drug": "drug",
+                "chemical": "drug",
+                "medical condition": "condition",
+                "disease": "condition",
+                "gene": "gene",
+                "gene variant": "gene variant"
+            },
+            "BC5CDR": {
+                "drug": "drug",
+                "chemical": "drug",
+                "medical condition": "condition",
+                "disease": "condition"
+            }
+        },
+        "gliner_threshold": 0.3,
+        "gliner_tokenizer_bool": true
+    }
+}
